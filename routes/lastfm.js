@@ -1,19 +1,61 @@
-var express = require('express');
-var router = express.Router();
-var LastFmApi = require('../lfm.js')
-var request = require('request');
+"use strict"
+
+let express = require('express');
+let router = express.Router();
+let LastFmApi = require('../lfm.js')
+let request = require('request');
 
 //global keys
-var apiKey = '1f579ca816d811e1c3f9578a27be8057';
-var userName = 'montredavis';
+let apiKey = '1f579ca816d811e1c3f9578a27be8057';
+let userName = 'montredavis';
 
-
+/**
+ * [LastFMData description]
+ * @type {Object}
+ */
 var LastFMData = {
 	userRecentTracks : []
 }
 
+/**
+ * [LastFmObject description]
+ */
+function LastFmObject(){
+	this.tracks = [],
+	this.artists = [];
+	this.pageMax = 0;
+}
+
+/**
+ * [parseFmCalls description]
+ * @param  {[array]} dataArray [description]
+ * @return {[type]}           [description]
+ */
+function parseFmCalls(data){
+	let responseObject = new LastFmObject();
+	let container = [];
+
+	console.log(data);
+
+	for (var i = 0; i < data.track.length; i++) {
+		container.push(data.track[i]);
+	}
+
+	responseObject.tracks = container;
+	return responseObject;
+}
+
+
+/**
+ * [responseCallBack description]
+ * @param  {[type]} err  [description]
+ * @param  {[type]} res  [description]
+ * @param  {[type]} body [description]
+ * @return {[type]}      [description]
+ */
 function responseCallBack(err, res, body){
-	console.log('inside callback')
+
+	console.log('inside callback');
 	if(typeof body === 'undefined' || body === null){
 		console.log(err);
 		console.log(res.statusCode);
@@ -21,11 +63,16 @@ function responseCallBack(err, res, body){
 	}
 	else{
 
-		var parsedData = JSON.parse(body); 
-		LastFMData.userRecentTracks = parsedData.recenttracks;
-	}
+		//lets parse the data from the raw response
+		let jsonParsedData = JSON.parse(body); 
 
-	console.log(LastFMData);
+		//now let's parse the data again, we need to have the data massaged for this application
+	    let massagedData = parseFmCalls(jsonParsedData.recenttracks);
+
+		LastFMData.userRecentTracks = massagedData;
+
+		console.log("data has been parsed succesfully");
+	}
 }
 
 /**
@@ -39,11 +86,19 @@ function getRequest(path, callback) {
 }
 
 
-
+/**
+ * [description]
+ * @param  {[type]} req                  [description]
+ * @param  {[type]} res                  [description]
+ * @param  {[type]} next)                {               res.render('lastfm', { title: 'Last FM', lastFmData : LastFMData });        getRequest(LastFmApi.userRecentTracks(userName, apiKey) [description]
+ * @param  {[type]} responseCallBack);} [description]
+ * @return {[type]}                      [description]
+ */
 router.get('/', function(req, res, next) {
-    res.render('lastfm', { title: 'Last FM' });
+    res.render('lastfm', { title: 'Last FM', lastFmData : LastFMData });
 
-    var userRecentTracks = getRequest(LastFmApi.userRecentTracks(userName, apiKey), responseCallBack);
+    //make the call to last fm and get back the user recent tracks
+    getRequest(LastFmApi.userRecentTracks(userName, apiKey), responseCallBack);
 
 });
 
