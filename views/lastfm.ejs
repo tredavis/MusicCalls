@@ -7,13 +7,17 @@
   <body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
+    <button onclick="window.location='/lastFm/userrecentracks'"> Recent Tracks </button>
+    <button onclick="window.location='/lastFm/topartists'"> Top Artist </button>
+
   </body>
 <script type="text/javascript">
-	
 
-  var myVar = <%- JSON.stringify(title) %>;
-  var lfmData = <%- JSON.stringify(lastFmData) %>;
+  var topTracks = <%- JSON.stringify(lastFmDataTracks) %>;
+  console.log(topTracks);
 
-  console.log(lfmData);
+  var topArtist = <%- JSON.stringify(topArtistList) %>;
+  console.log(topArtist);
+
 </script>
 </html>
