@@ -1,8 +1,27 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
 a {
-  color: #00B7FF;
+    color: #00B7FF;
+}
+
+.row {
+    margin: 20px
+}
+
+.titleContainer {
+    background: grey;
+    height: 80%
+}
+
+form {
+    margin: 10px, 0px, 10px, 0px;
+    padding: : 10px, 0px, 10px, 0px;
+    max-width: 400px;
+}
+
+div {
+    margin: 5px
 }

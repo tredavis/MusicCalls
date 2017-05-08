@@ -1,23 +1,56 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title><%= title %></title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
-    <h1><%= title %></h1>
-    <p><%= user.name %> Welcome to <%= title %></p>
 
+  <div class="container">
+    <div class="row">
+        <div class="row titleContainer page-header jumbotron">
+          <div class="col-xs-12 col-lg-12">
+            <h1><%= title %></h1>
+            <p><%= user.name %> Welcome to <%= title %></p>
+          </div>
+        </div>
 
-    <button onclick="window.location='/lastFm/userrecentracks'"> Recent Tracks </button>
-    <button onclick="window.location='/lastFm/topartists'"> Top Artist </button>
+        <div class="row">
+          <div class="col-md-6 col-xs-12">
+            <button class="btn btn-default" onclick="window.location='/lastFm/userrecentracks'"> Recent Tracks </button>
+          
+            <button class="btn btn-default" onclick="window.location='/lastFm/topartists'"> Top Artist </button>
+          </div>
+          <div class="col-md-6 col-xs-12">
+            <form class="form-inline">
+                  <div class="form-group">
+                    <label for="friend">Type Friend:</label>
+                    <input type="text" class="form-control" id="friend" placeholder="montredavis">
+                  </div>
+                <button type="submit" class="btn btn-default">Submit</button>
+            </form>
+          </div>
+        </div>
 
-
+        <div class="well well-lg">
+            <div id="friendImageDiv" class="row">
+              
+            </div>
+        </div>
+    </div>
+    </div>
   </body>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="crossorigin="anonymous"></script>
+
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  
+  <script src="http://localhost:8080/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="/javascripts/lastFmView.js"></script>
 
-  <script type="text/javascript">
- 	loadData(<%- JSON.stringify(data) %>)
-
-  </script>
 </html>
