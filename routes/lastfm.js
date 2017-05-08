@@ -81,8 +81,13 @@ function LastFriendObject(rawFriend) {
         this.playList = rawFriend.playlists;
         this.signUpDateUnix = rawFriend.registered.unixtime;
 
-        if (this.signUpDateUnix !== null || typeof this.signUpDateUnix !== 'undefined')
-            this.signUpDateUnix = new Date(this.signUpDateUnix * 1000)
+        if (this.signUpDateUnix !== null || typeof this.signUpDateUnix !== 'undefined') {
+            var dateObj = new Date(this.signUpDateUnix * 1000);
+            var month = dateObj.getUTCMonth() + 1; //months from 1-12
+            var day = dateObj.getUTCDate();
+            var year = dateObj.getUTCFullYear()
+            this.signUpDateUnix = year + "/" + month + "/" + day;
+        }
 
         //get images
         for (var i = 0; i < rawFriend.image.length; i++) {
