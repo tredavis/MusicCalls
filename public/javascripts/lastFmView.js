@@ -1,3 +1,9 @@
 console.log("lastFmView.js has been reached!");
 
-console.log(lastFmData);
+
+function loadData(data) {
+    
+    for (var list in data) {
+        console.log(data[list]);
+	}
+}

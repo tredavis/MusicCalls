@@ -6,7 +6,6 @@ let LastFmApi = require('../lfm.js')
 let request = require('request');
 
 //global keys
-let apiKey = '1f579ca816d811e1c3f9578a27be8057';
 let userName = 'montredavis';
 
 /**
@@ -15,24 +14,94 @@ let userName = 'montredavis';
  */
 var LastFMData = {
     userRecentTracks: [],
-    topArtists: []
+    topArtists: [],
+    friends: []
 }
 
 /**
  * [LastFmObject description]
  */
-function LastFmTrackObject() {
-	this.contructor = 'LastFmTrackObject',
-    this.tracks = []
+function LastFmTrackObject(rawTrack) {
+    this.contructor = 'LastFmTrackObject';
+    this.name = '';
+    this.dateText = '';
+    this.dataUTC = '';
+    this.album = '';
+    this.albumMbid = '';
+    this.artistName = '';
+    this.artistmbid = '';
+
+    if (typeof rawTrack !== 'undefined') {
+        this.name = rawTrack.name;
+        this.album = rawTrack.album['#text'];
+        this.albumMbid = rawTrack.album.mbid;
+        this.artistName = rawTrack.artist['#text'];
+        this.artistmbid = rawTrack.artist.mbid;
+    }
 }
 
-
-function LastFmArtistObject() {
-	this.contructor = 'LastFmArtistObject',
+/**
+ * [LastFmArtistObject description]
+ * @param {[type]} rawArtist [description]
+ */
+function LastFmArtistObject(rawArtist) {
+    this.contructor = 'LastFmArtistObject';
     this.artistName = '';
     this.artistId = '';
     this.rank = 0;
     this.playCount = 0;
+
+    if (typeof rawArtist !== 'undefined') {
+        this.rank = rawArtist['@attr'].rank;
+        this.artistName = rawArtist.name;
+        this.playCount = rawArtist.playcount;
+        this.artistId = rawArtist.mbid;
+    }
+
+}
+
+/**
+ * [LastFriendObject description]
+ * @param {[type]} rawArtist [description]
+ */
+function LastFriendObject(rawFriend) {
+    this.contructor = 'LastFriendObject';
+    this.name = '';
+    this.age = '';
+    this.gender = '';
+    this.playCount = '';
+
+    if (typeof rawFriend !== 'undefined') {
+        //console.log(rawArtist);
+
+        this.name = rawFriend.name;
+        this.age = rawFriend.age;
+        this.gender = rawFriend.gender;
+        this.playCount = rawFriend.playcount;
+        this.playList = rawFriend.playlists;
+        this.signUpDateUnix = rawFriend.registered.unixtime;
+
+        if (this.signUpDateUnix !== null || typeof this.signUpDateUnix !== 'undefined')
+            this.signUpDateUnix = new Date(this.signUpDateUnix * 1000)
+
+        //get images
+        for (var i = 0; i < rawFriend.image.length; i++) {
+
+            if (rawFriend.image[i].size === 'small') {
+                this.imageSmall = rawFriend.image[i]['#text'];
+            }
+            if (rawFriend.image[i].size === 'medium') {
+                this.imageMedium = rawFriend.image[i]['#text'];
+            }
+            if (rawFriend.image[i].size === 'large') {
+                this.imageLarge = rawFriend.image[i]['#text'];
+            }
+            if (rawFriend.image[i].size === 'extraLarge') {
+                this.extraLarge = rawFriend.image[i]['#text'];
+            }
+        }
+    }
+
 }
 
 /**
@@ -41,31 +110,42 @@ function LastFmArtistObject() {
  * @return {[type]}           [description]
  */
 function parseFmCalls(data, outObject) {
-	console.log(data);
-	console.log("inside of "+ parseFmCalls.name + "this is the type for the outObject: " + outObject.contructor)
-    if (outObject.contructor === 'LastFmTrackObject') { 
-        let container = [];
+    console.log(data);
+    console.log("inside of " + parseFmCalls.name + "this is the type for the outObject: " + outObject.contructor)
 
+    //what happens when we get a track object
+    if (outObject.contructor === 'LastFmTrackObject') {
+        let trackContainer = [];
         for (var i = 0; i < data.track.length; i++) {
-            container.push(data.track[i]);
+            trackContainer.push(new LastFmTrackObject(data.track[i]));
         }
 
-        outObject.tracks = container;
-        return outObject;
+        return trackContainer;
     }
-    else if (outObject.contructor === 'LastFmArtistObject'){
+
+    //what happens when we call the artist objects
+    else if (outObject.contructor === 'LastFmArtistObject') {
 
         let artistsContainer = [];
 
+        //let's flatten the artist data struture
         for (var i = 0; i < data.artist.length; i++) {
-            artistsContainer.push(data.artist[i]);
+            artistsContainer.push(new LastFmArtistObject(data.artist[i]));
         }
 
-        outObject = artistsContainer;
         return artistsContainer;
-    }
-    else{
-    	console.log("something went wrong");
+    } else if (outObject.contructor === 'LastFriendObject') {
+        let friendContainer = [];
+
+        //console.log(data);
+        //let's flatten the artist data struture
+        for (var i = 0; i < data.user.length; i++) {
+            friendContainer.push(new LastFriendObject(data.user[i]));
+        }
+
+        return friendContainer;
+    } else {
+        console.log("something went wrong");
     }
 }
 
@@ -79,7 +159,8 @@ function parseFmCalls(data, outObject) {
  */
 function recentTracksCallBack(err, res, body) {
 
-    console.log('inside callback');
+    console.log('inside ' + recentTracksCallBack.name + ' callback');
+
     if (typeof body === 'undefined' || body === null) {
         console.log(err);
         console.log(res.statusCode);
@@ -93,8 +174,8 @@ function recentTracksCallBack(err, res, body) {
         let massagedData = parseFmCalls(jsonParsedData.recenttracks, new LastFmTrackObject());
         LastFMData.userRecentTracks = massagedData;
 
-        if(typeof massagedData !== 'undefined' && massagedData !== null)
-        console.log(recentTracksCallBack.name + "has parsed your data succesfully");
+        if (typeof massagedData !== 'undefined' && massagedData !== null)
+            console.log(recentTracksCallBack.name + "has parsed your data succesfully");
     }
 }
 
@@ -107,7 +188,8 @@ function recentTracksCallBack(err, res, body) {
  */
 function topArtistsCallBack(err, res, body) {
 
-    console.log('inside callback');
+    console.log('inside ' + topArtistsCallBack.name + ' callback');
+
     if (typeof body === 'undefined' || body === null) {
         console.log(err);
         console.log(res.statusCode);
@@ -121,8 +203,29 @@ function topArtistsCallBack(err, res, body) {
         let massagedData = parseFmCalls(jsonParsedData.topartists, new LastFmArtistObject());
         LastFMData.topArtists = massagedData;
 
-        if(typeof massagedData !== 'undefined' && massagedData !== null)
-        console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+        if (typeof massagedData !== 'undefined' && massagedData !== null)
+            console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+    }
+}
+
+
+function friendsCallBack(err, res, body) {
+
+    console.log('inside ' + friendsCallBack.name + ' callback');
+    if (typeof body === 'undefined' || body === null) {
+        console.log(err);
+        console.log(res.statusCode);
+    } else {
+
+        //lets parse the data from the raw response
+        let jsonParsedData = JSON.parse(body);
+
+        //now let's parse the data again, we need to have the data massaged for this application
+        let massagedData = parseFmCalls(jsonParsedData.friends, new LastFriendObject());
+        LastFMData.friends = massagedData;
+
+        if (typeof massagedData !== 'undefined' && massagedData !== null)
+            console.log(topArtistsCallBack.name + "has parsed your data succesfully");
     }
 }
 
@@ -147,36 +250,38 @@ function getRequest(path, callback) {
  */
 
 router.get('/', function(req, res, next) {
+
+    //get the users friends
+    getRequest(LastFmApi.getFriends(userName), friendsCallBack);
+
     res.render('lastfm', {
-        title: 'Last FM',
-        lastFmDataTracks: LastFMData.userRecentTracks,
-        topArtistList : LastFMData.topArtists
+        title: 'Welcome to your Music Database!',
+        user: { name: userName },
+        data: LastFMData
     });
 });
 
 router.get('/userrecentracks', function(req, res, next) {
     res.render('lastfm', {
         title: 'Last FM',
-        lastFmDataTracks: LastFMData.userRecentTracks,
-        topArtistList : LastFMData.topArtists
+        user: { name: userName },
+        data: LastFMData
     });
-    	//make the call to last fm and get back the user recent tracks
-   	getRequest(LastFmApi.userRecentTracks(userName, apiKey), recentTracksCallBack);
-	
+    //make the call to last fm and get back the user recent tracks
+    getRequest(LastFmApi.userRecentTracks(userName), recentTracksCallBack);
 
 });
 
 router.get('/topartists', function(req, res, next) {
-	//console.log(req.params);
+    //console.log(req.params);
 
     res.render('lastfm', {
         title: 'Last FM',
-        topArtistList: LastFMData.topArtists,
-        lastFmDataTracks: LastFMData.userRecentTracks,
-        testRequestData: req
+        user: { name: userName },
+        data: LastFMData
     });
 
-    getRequest(LastFmApi.userTopArtist(userName, apiKey), topArtistsCallBack);
+    getRequest(LastFmApi.userTopArtist(userName), topArtistsCallBack);
 
 });
 
