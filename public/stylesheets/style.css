@@ -25,3 +25,9 @@ form {
 div {
     margin: 5px
 }
+
+#friendPText {
+    margin: 7px;
+    padding: 3px;
+    display: inline;
+}

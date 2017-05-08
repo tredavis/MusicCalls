@@ -52,6 +52,7 @@ $(function() {
 
     /**
      * [insertFriendImage description]
+
      * @param  {[type]} friend [description]
      * @return {[type]}        [description]
      */
@@ -70,7 +71,7 @@ $(function() {
         var img = $("<img>", { id: friend.name, src: friend.imageMedium });
         div.append(img);
 
-        var playCount = $("<p>").text(friend.name + " has scrobbled " + friend.playCount + "times!");
+        var playCount = $("<p>", { id: "friendPText" }).text(friend.name + " has scrobbled " + friend.playCount + " times!");
         div.append(playCount)
 
         $("#friendImageDiv").append(columns);

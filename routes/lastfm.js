@@ -309,6 +309,8 @@ function topArtistsCallBack(err, res, body) {
 
 
 /**
+ * [friendsCallBack description]
+
  * @param  {[type]} err  [description]
  * @param  {[type]} res  [description]
  * @param  {[type]} body [description]
@@ -339,10 +341,11 @@ function friendsCallBack(err, res, body) {
 }
 
 /**
- * [getRequest wraps a get http request]
- * @param  {[type]}   path     [the url to go to]
- * @param  {Function} callback [the call back function]
- * @return {[type]}            [null]
+ * [getRequest description]
+
+ * @param  {[type]}   path     [description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
  */
 function getRequest(path, callback) {
     request.get(path, callback);
@@ -360,11 +363,12 @@ io.on('connection', function(socket) {
 
 /**
  * [description]
- * @param  {[type]} req                  [description]
- * @param  {[type]} res                  [description]
- * @param  {[type]} next)                {               res.render('lastfm', { title: 'Last FM', lastFmData : LastFMData });        getRequest(LastFmApi.userRecentTracks(userName, apiKey) [description]
- * @param  {[type]} responseCallBack);} [description]
- * @return {[type]}                      [description]
+
+ * @param  {[type]} req   [description]
+ * @param  {[type]} res   [description]
+ * @param  {[type]} next) {               LastFMData.fetchData();                 res.render('lastfm', {        title: 'Welcome to your Music Database!',        user: { name: userName } [description]
+ * @param  {[type]} data: LastFMData       });}                  [description]
+ * @return {[type]}       [description]
  */
 router.get('/', function(req, res, next) {
     LastFMData.fetchData();
@@ -375,6 +379,16 @@ router.get('/', function(req, res, next) {
     });
 });
 
+
+/**
+ * [description]
+
+ * @param  {[type]} req   [description]
+ * @param  {[type]} res   [description]
+ * @param  {[type]} next) {               LastFMData.fetchData();                 res.render('lastfm', {        title: 'Last FM',        user: { name: userName } [description]
+ * @param  {[type]} data: LastFMData       });}                  [description]
+ * @return {[type]}       [description]
+ */
 router.get('/userrecentracks', function(req, res, next) {
     LastFMData.fetchData();
 
