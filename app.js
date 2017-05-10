@@ -1,4 +1,5 @@
 var express = require('express');
+var fs = require('fs');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -27,6 +28,13 @@ app.use('/', index);
 app.use('/users', users);
 app.use('/lastfm', lastfm);
 app.use('/lastfm/*', lastfm);
+
+fs.readFileAsArray('C:/Users/montredavis/Desktop/MediaPlatformJS/MusicCalls/data/tameimpala1', 'utf8', function(err, data) {
+    if (err) {
+        return console.log(err);
+    }
+    console.log(data);
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
