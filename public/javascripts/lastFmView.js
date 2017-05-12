@@ -10,8 +10,13 @@ $(function() {
             recentTracksPresent: false,
             topTracksPresent: false,
             checkStaus: function() {
-                if (imagesPresent && topArtistPresent && recentTracksPresent && topTracksPresent)
+                console.log("checking status...");
+                if (this.imagesPresent && this.topArtistPresent && this.recentTracksPresent && this.topTracksPresent) {
                     socket.close();
+                    console.log("the socket has been closed");
+                } else {
+
+                }
             }
         }
         //stops the images from being created more than once
@@ -26,21 +31,34 @@ $(function() {
         if (ClientData.imagesPresent === false) {
             for (var i = 0; i < data.friends.length; i++) {
                 insertFriendImage(data.friends[i]);
+                console.log(data.friends[i]);
             }
         }
+
+        //do we need to close the socket??
+        ClientData.checkStaus();
     });
 
     socket.on('topartistsGathered', function(data) {
         ClientData.topArtistPresent = true;
         console.log(data);
+
+        //do we need to close the socket??
+        ClientData.checkStaus();
     });
     socket.on('userRecentTracksGathered', function(data) {
         ClientData.recentTracksPresent = true;
         console.log(data);
+
+        //do we need to close the socket??
+        ClientData.checkStaus();
     });
     socket.on('topTracksGathered', function(data) {
         ClientData.topTracksPresent = true;
         console.log(data);
+
+        //do we need to close the socket??
+        ClientData.checkStaus();
     });
 
     function loadData(data) {
@@ -49,6 +67,7 @@ $(function() {
             console.log(data[list]);
         }
     }
+
 
     /**
      * [insertFriendImage description]

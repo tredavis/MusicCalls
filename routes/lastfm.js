@@ -16,24 +16,22 @@ let userName = 'montredavis';
 
 /**
  * [LastFMData description]
+
  * @type {Object}
  */
 var LastFMData = {
+    users: [],
     events: null,
     userRecentTracks: [],
     topArtists: [],
     topTracks: [],
     friends: [],
-    fetchData: function() {
+    fetchData: function(user) {
         //get the users friends
-        getRequest(LastFmApi.getFriends(userName), friendsCallBack);
-        //make the call to last fm and get back the user recent tracks
-        getRequest(LastFmApi.userRecentTracks(userName), recentTracksCallBack);
-
-        getRequest(LastFmApi.userTopArtist(userName), topArtistsCallBack);
-
-        getRequest(LastFmApi.userTopTracks(userName), topTracksCallBack);
-
+        getRequest(LastFmApi.getFriends(user), friendsCallBack);
+        getRequest(LastFmApi.userRecentTracks(user), recentTracksCallBack);
+        getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
+        getRequest(LastFmApi.userTopTracks(user), topTracksCallBack);
     }
 }
 
@@ -62,7 +60,9 @@ function LastFmTrackObject(rawTrack) {
 }
 
 /**
- * [LastFmObject description]
+ * [TopTrackObject description]
+
+ * @param {[type]} rawTrack [description]
  */
 function TopTrackObject(rawTrack) {
     this.contructor = 'TopTrackObject';
@@ -110,11 +110,11 @@ function LastFmArtistObject(rawArtist) {
  */
 function LastFriendObject(rawFriend) {
     this.contructor = 'LastFriendObject';
+    this.data = null;
     this.name = '';
     this.age = '';
     this.gender = '';
     this.playCount = '';
-
     if (typeof rawFriend !== 'undefined') {
         this.name = rawFriend.name;
         this.age = rawFriend.age;
@@ -147,6 +147,10 @@ function LastFriendObject(rawFriend) {
                 this.extraLarge = rawFriend.image[i]['#text'];
             }
         }
+
+        (function loadData() {
+            LastFMData.fetchData();
+        })();
     }
 }
 
@@ -161,20 +165,20 @@ function parseFmCalls(data, outObject) {
     //what happens when we get a track object
     if (outObject.contructor === 'LastFmTrackObject') {
         let trackContainer = [];
-        for (var i = 0; i < data.track.length; i++) {
-            trackContainer.push(new LastFmTrackObject(data.track[i]));
-        }
+
+        if (typeof data.track !== 'undefined')
+            for (var i = 0; i < data.track.length; i++) {
+                trackContainer.push(new LastFmTrackObject(data.track[i]));
+            }
 
         return trackContainer;
-    }
-
-    //what happens when we call the artist objects
-    else if (outObject.contructor === 'LastFmArtistObject') {
+    } else if (outObject.contructor === 'LastFmArtistObject') {
 
         let artistsContainer = [];
 
+        if (typeof data.artist !== 'undefined')
         //let's flatten the artist data struture
-        for (var i = 0; i < data.artist.length; i++) {
+            for (var i = 0; i < data.artist.length; i++) {
             artistsContainer.push(new LastFmArtistObject(data.artist[i]));
         }
 
@@ -182,9 +186,9 @@ function parseFmCalls(data, outObject) {
     } else if (outObject.contructor === 'LastFriendObject') {
         let friendContainer = [];
 
-        //console.log(data);
+        if (typeof data.user !== 'undefined')
         //let's flatten the artist data struture
-        for (var i = 0; i < data.user.length; i++) {
+            for (var i = 0; i < data.user.length; i++) {
             friendContainer.push(new LastFriendObject(data.user[i]));
         }
 
@@ -192,9 +196,9 @@ function parseFmCalls(data, outObject) {
     } else if (outObject.contructor === 'TopTrackObject') {
         let topTrackContainer = [];
 
-        //console.log(data);
+        if (typeof data.track !== 'undefined')
         //let's flatten the artist data struture
-        for (var i = 0; i < data.track.length; i++) {
+            for (var i = 0; i < data.track.length; i++) {
             topTrackContainer.push(new TopTrackObject(data.track[i]));
         }
 
@@ -225,15 +229,19 @@ function recentTracksCallBack(err, res, body) {
         let jsonParsedData = JSON.parse(body);
 
         //now let's parse the data again, we need to have the data massaged for this application
-        let massagedData = parseFmCalls(jsonParsedData.recenttracks, new LastFmTrackObject());
-        LastFMData.userRecentTracks = massagedData;
+        //
+        if (typeof jsonParsedData.recenttracks !== 'undefined') {
 
-        if (typeof massagedData !== 'undefined' && massagedData !== null) {
-            console.log(recentTracksCallBack.name + "has parsed your data succesfully");
+            let massagedData = parseFmCalls(jsonParsedData.recenttracks, new LastFmTrackObject());
+            LastFMData.userRecentTracks = massagedData;
+
+            if (typeof massagedData !== 'undefined' && massagedData !== null) {
+                console.log(recentTracksCallBack.name + "has parsed your data succesfully");
 
 
-            if (LastFMData.events !== null)
-                LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
+                if (LastFMData.events !== null)
+                    LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
+            }
         }
     }
 }
@@ -258,17 +266,19 @@ function topTracksCallBack(err, res, body) {
 
         //lets parse the data from the raw response
         let jsonParsedData = JSON.parse(body);
+        if (typeof jsonParsedData.toptracks !== 'undefined') {
 
-        //now let's parse the data again, we need to have the data massaged for this application
-        let massagedData = parseFmCalls(jsonParsedData.toptracks, new TopTrackObject());
-        LastFMData.topTracks = massagedData;
+            //now let's parse the data again, we need to have the data massaged for this application
+            let massagedData = parseFmCalls(jsonParsedData.toptracks, new TopTrackObject());
+            LastFMData.topTracks = massagedData;
 
-        if (typeof massagedData !== 'undefined' && massagedData !== null) {
-            console.log(topTracksCallBack.name + "has parsed your data succesfully");
+            if (typeof massagedData !== 'undefined' && massagedData !== null) {
+                console.log(topTracksCallBack.name + "has parsed your data succesfully");
 
 
-            if (LastFMData.events !== null)
-                LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
+                if (LastFMData.events !== null)
+                    LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
+            }
         }
     }
 }
@@ -293,16 +303,19 @@ function topArtistsCallBack(err, res, body) {
         //lets parse the data from the raw response
         let jsonParsedData = JSON.parse(body);
 
-        //now let's parse the data again, we need to have the data massaged for this application
-        let massagedData = parseFmCalls(jsonParsedData.topartists, new LastFmArtistObject());
-        LastFMData.topArtists = massagedData;
+        if (typeof jsonParsedData.topartists !== 'undefined') {
 
-        if (typeof massagedData !== 'undefined' && massagedData !== null) {
-            console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+            //now let's parse the data again, we need to have the data massaged for this application
+            let massagedData = parseFmCalls(jsonParsedData.topartists, new LastFmArtistObject());
+            LastFMData.topArtists = massagedData;
 
-            if (LastFMData.events !== null)
-                LastFMData.events.emit('topartistsGathered', { topArtists: LastFMData.topArtists })
+            if (typeof massagedData !== 'undefined' && massagedData !== null) {
+                console.log(topArtistsCallBack.name + "has parsed your data succesfully");
 
+                if (LastFMData.events !== null)
+                    LastFMData.events.emit('topartistsGathered', { topArtists: LastFMData.topArtists })
+
+            }
         }
     }
 }
@@ -328,14 +341,18 @@ function friendsCallBack(err, res, body) {
         let jsonParsedData = JSON.parse(body);
 
         //now let's parse the data again, we need to have the data massaged for this application
-        let massagedData = parseFmCalls(jsonParsedData.friends, new LastFriendObject());
-        LastFMData.friends = massagedData;
+        if (typeof jsonParsedData.friends !== 'undefined') {
 
-        if (typeof massagedData !== 'undefined' && massagedData !== null) {
-            console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+            let massagedData = parseFmCalls(jsonParsedData.friends, new LastFriendObject());
 
-            if (LastFMData.events !== null)
-                LastFMData.events.emit('friendsGathered', { friends: LastFMData.friends })
+            LastFMData.friends = massagedData;
+
+            if (typeof massagedData !== 'undefined' && massagedData !== null) {
+                console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+
+                if (LastFMData.events !== null)
+                    LastFMData.events.emit('friendsGathered', { friends: LastFMData.friends })
+            }
         }
     }
 }
@@ -357,8 +374,11 @@ io.on('connection', function(socket) {
 
     if (socket !== null || typeof socket !== 'undefined') {
         LastFMData.events = socket;
-        LastFMData.fetchData();
     }
+});
+
+io.on('close', function(socket) {
+    console.log("the socket has been closed!");
 });
 
 /**
@@ -371,7 +391,7 @@ io.on('connection', function(socket) {
  * @return {[type]}       [description]
  */
 router.get('/', function(req, res, next) {
-    LastFMData.fetchData();
+    //LastFMData.fetchData();
     res.render('lastfm', {
         title: 'Welcome to your Music Database!',
         user: { name: userName },
@@ -390,7 +410,7 @@ router.get('/', function(req, res, next) {
  * @return {[type]}       [description]
  */
 router.get('/userrecentracks', function(req, res, next) {
-    LastFMData.fetchData();
+    //LastFMData.fetchData(userName);
 
     res.render('lastfm', {
         title: 'Last FM',
@@ -400,13 +420,28 @@ router.get('/userrecentracks', function(req, res, next) {
 });
 
 router.get('/topartists', function(req, res, next) {
-    LastFMData.fetchData();
+    //LastFMData.fetchData(userName);
 
     res.render('lastfm', {
         title: 'Last FM',
         user: { name: userName },
         data: LastFMData
     });
+});
+
+
+router.post('/username', function(req, res) {
+    if (req.body !== null || typeof req.body !== undefined) {
+        userName = req.body.username;
+
+        LastFMData.fetchData(userName);
+
+        res.render('lastfm', {
+            title: 'Last FM',
+            user: { name: userName },
+            data: LastFMData
+        });
+    }
 });
 
 module.exports = router;
