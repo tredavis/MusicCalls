@@ -147,10 +147,10 @@ function LastFriendObject(rawFriend) {
                 this.extraLarge = rawFriend.image[i]['#text'];
             }
         }
-
         (function loadData() {
             LastFMData.fetchData();
         })();
+
     }
 }
 
