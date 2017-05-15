@@ -39,6 +39,24 @@ $(function() {
         ClientData.checkStaus();
     });
 
+    socket.on('dbTables', function(data) {
+        for (var i = 0; i < data.tables.length; i++) {
+            var dropDown = $("#dbSelector");
+            dropDown.empty();
+            console.log(data.tables[i].TableNames);
+            for (var x = 0; x < data.tables[i].TableNames.length; x++) {
+                console.log(data.tables[i].TableNames[x])
+                var option = $("<option>", { id: "option" + x, "value": data.tables[i].TableNames[x] }).html(data.tables[i].TableNames[x]);
+                $("#dbSelector").append(option);
+
+                $("#dbSelector").on("change", function(data) {
+                    console.log(data + " was clicked");
+                });
+            }
+        }
+    });
+
+
     socket.on('topartistsGathered', function(data) {
         ClientData.topArtistPresent = true;
         console.log(data);
@@ -48,14 +66,46 @@ $(function() {
     });
     socket.on('userRecentTracksGathered', function(data) {
         ClientData.recentTracksPresent = true;
-        console.log(data);
+
+        //let's collect and sort this data
+        var arr = [];
+        arr = data.userRecentTracks.Items;
+        arr.sort(function(a, b) {
+            return a.trackId - b.trackId;
+        });
+        var displayObject = {
+            tableId: 0,
+            dto: null
+        }
+
+        //if (arr !== null && arr.length < 0) {
+        //we need to loop through the list twice to write all the d
+        for (var i = 0; i < arr.length; i++) {
+            var trackId = arr[i].trackId;
+            var dObj = arr[i].dObject;
+
+            //console.log("trackId : " + parseInt(trackId) + "  dObject: " + dObj);
+            console.log("length " + dObj.length);
+
+            if (typeof dObj !== 'undefined') {
+
+                for (var x = 0; x < dObj.length; x++) {
+
+                    var displayObject = {
+                        id: arr[i].trackId,
+                        dto: arr[i].dObject[x]
+                    }
+
+                    console.log(displayObject.dto);
+                }
+            }
+        }
 
         //do we need to close the socket??
         ClientData.checkStaus();
     });
     socket.on('topTracksGathered', function(data) {
         ClientData.topTracksPresent = true;
-        console.log(data);
 
         //do we need to close the socket??
         ClientData.checkStaus();

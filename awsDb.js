@@ -12,15 +12,38 @@ AWS.config.update({
 });
 
 //the db client
-var dataBaseClient = new AWS.DynamoDB.DocumentClient();
-var table = "RecentTracks";
+let dataBaseClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
-//this is a new params object for inserting recent tracks
-exports.writeToDynamo = function(data, type) {
+//global tables object
+exports.Tables = [];
+
+exports.ActiveTable = 'RecentTracks';
+
+exports.listTables = function(callBack) {
+    var params = {};
+    dataBaseClient.listTables(params, function(err, data) {
+        console.log(err);
+        if (err) console.log(err, err.stack);
+        else {
+            exports.Tables.push(data);
+
+            callBack(exports.Tables);
+        }
+    });
+};
+
+/**
+ * [writeToDynamo description]
+ * @param  {[type]} data     [description]
+ * @param  {[type]} type     [description]
+ * @param  {[type]} callBack [description]
+ * @return {[type]}          [description]
+ */
+exports.writeToDb = function(table, data, type, callBack) {
     for (var i = 0; i < data.length; i++) {
 
         var params = {
-            TableName: "RecentTracks",
+            TableName: table,
             ReturnConsumedCapacity: "TOTAL",
             Item: {
                 trackId: i,
@@ -36,33 +59,29 @@ exports.writeToDynamo = function(data, type) {
             if (err) {
                 console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
             } else {
-                console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                //let's sending back to the callback function
+                callBack(data);
             }
         });
 
     }
 }
 
-exports.showAllItems = function(data) {
-    for (var i = 0; i < data.length; i++) {
+exports.showAllItems = function(table, callBack) {
+    var retArr = [];
+    var params = {
+        TableName: table,
+        ReturnConsumedCapacity: "TOTAL"
+    };
 
-        var params = {
-            TableName: "MusicDb",
-            ReturnConsumedCapacity: "TOTAL",
-            Item: {
-                userId: data[i].rank,
-                dObject: data
-            }
-        };
+    dataBaseClient.scan(params, function(err, data) {
+        if (err) {
+            console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
+        } else {
+            //console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+            retArr.push(data);
 
-        dataBaseClient.scan(params, function(err, data) {
-            console.log(data);
-
-            if (err) {
-                console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-            } else {
-                console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-            }
-        });
-    }
+            callBack(data);
+        }
+    });
 }
