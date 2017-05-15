@@ -90,11 +90,22 @@ $(function() {
         var img = $("<img>", { id: friend.name, src: friend.imageMedium });
         div.append(img);
 
+        var loadButton = $("<button>", { "data-name": friend.name, class: "btn btn-danger btn-sm loadBtn" }).html("Load Data");
+        div.append(loadButton);
+
         var playCount = $("<p>", { id: "friendPText" }).text(friend.name + " has scrobbled " + friend.playCount + " times!");
         div.append(playCount)
+
 
         $("#friendImageDiv").append(columns);
 
         ClientData.imagesPresent = true;
     }
+
+
+    $("#userForm").on("click", ".loadBtn", function(data) {
+        console.log(data + " was clicked");
+    });
+
+    console.log($("#userForm"))
 });

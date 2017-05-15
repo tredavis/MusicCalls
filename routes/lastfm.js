@@ -4,6 +4,7 @@ let express = require('express');
 let router = express.Router();
 let LastFmApi = require('../lfm.js')
 let request = require('request');
+var awsDb = require('../awsDb.js');
 
 //socket io stuff
 let server = require('http').createServer(router);
@@ -12,7 +13,7 @@ let io = require('socket.io').listen(server);
 server.listen(8080);
 
 //global keys
-let userName = 'montredavis';
+let userName = '';
 
 /**
  * [LastFMData description]
@@ -28,10 +29,10 @@ var LastFMData = {
     friends: [],
     fetchData: function(user) {
         //get the users friends
-        getRequest(LastFmApi.getFriends(user), friendsCallBack);
-        getRequest(LastFmApi.userRecentTracks(user), recentTracksCallBack);
-        getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
-        getRequest(LastFmApi.userTopTracks(user), topTracksCallBack);
+        //getRequest(LastFmApi.getFriends(user), friendsCallBack);
+        getRequest(LastFmApi.userRecentTracks(user, 1), recentTracksCallBack);
+        //getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
+        //getRequest(LastFmApi.userTopTracks(user), topTracksCallBack);
     }
 }
 
@@ -46,16 +47,23 @@ function LastFmTrackObject(rawTrack) {
     this.album = '';
     this.albumMbid = '';
     this.artistName = '';
-    this.artistmbid = '';
-    this.playcount = '';
+    this.artistMbid = '';
+    this.playcount = 1;
 
     if (typeof rawTrack !== 'undefined') {
         this.name = rawTrack.name;
         this.album = rawTrack.album['#text'];
         this.albumMbid = rawTrack.album.mbid;
         this.artistName = rawTrack.artist['#text'];
-        this.artistmbid = rawTrack.artist.mbid;
+        this.artistMbid = rawTrack.artist.mbid;
+        this.dateText = rawTrack.date['#text'];
+        this.dataUTC = rawTrack.date.uts;
 
+        if (rawTrack.album.mbid === '')
+            this.albumMbid = 'albumMbid is not available'
+
+        if (rawTrack.artist.mbid === '')
+            this.artistMbid = 'artist mbid'
     }
 }
 
@@ -66,13 +74,14 @@ function LastFmTrackObject(rawTrack) {
  */
 function TopTrackObject(rawTrack) {
     this.contructor = 'TopTrackObject';
-    this.name = '';
-    this.mbid = '';
-    this.artistName = '';
-    this.artistmbid = '';
-    this.playCount = '';
-    this.duration = '';
-    this.rank = '';
+    this.userId = 'N/A';
+    this.name = 'N/A';
+    this.mbid = 'N/A';
+    this.artistName = 'N/A';
+    this.artistmbid = 'N/A';
+    this.playCount = 'N/A';
+    this.duration = 'N/A';
+    this.rank = 'N/A';
 
     if (typeof rawTrack !== 'undefined') {
         this.name = rawTrack.name;
@@ -82,6 +91,12 @@ function TopTrackObject(rawTrack) {
         this.playCount = rawTrack.playcount;
         this.duration = rawTrack.duration;
         this.rank = rawTrack['@attr'].rank;
+
+        if (rawTrack.mbid === '')
+            this.mbid = "No mbid available"
+
+        if (rawTrack.artist.mbid === '')
+            this.artistmbid = "No mbid available"
     }
 }
 
@@ -147,10 +162,10 @@ function LastFriendObject(rawFriend) {
                 this.extraLarge = rawFriend.image[i]['#text'];
             }
         }
-
         (function loadData() {
-            LastFMData.fetchData();
+            //LastFMData.fetchData();
         })();
+
     }
 }
 
@@ -216,7 +231,6 @@ function parseFmCalls(data, outObject) {
  * @return {[type]}      [description]
  */
 function recentTracksCallBack(err, res, body) {
-
     console.log('inside ' + recentTracksCallBack.name + ' callback');
 
     if (typeof body === 'undefined' || body === null) {
@@ -231,19 +245,39 @@ function recentTracksCallBack(err, res, body) {
         //now let's parse the data again, we need to have the data massaged for this application
         //
         if (typeof jsonParsedData.recenttracks !== 'undefined') {
+            var attr = jsonParsedData.recenttracks['@attr'];
 
             let massagedData = parseFmCalls(jsonParsedData.recenttracks, new LastFmTrackObject());
-            LastFMData.userRecentTracks = massagedData;
+            LastFMData.userRecentTracks.push(massagedData);
 
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
-                console.log(recentTracksCallBack.name + "has parsed your data succesfully");
+                console.log(recentTracksCallBack.name + " has parsed your data succesfully");
 
+                if (attr !== undefined && attr !== null) {
 
-                if (LastFMData.events !== null)
-                    LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
+                    if (parseInt(attr.page) < parseInt(attr.totalPages)) {
+
+                        console.log("we are currently on page:" + parseInt(attr.page))
+
+                        getRequest(LastFmApi.userRecentTracks(attr.user, parseInt(attr.page) + 1), recentTracksCallBack);
+
+                    } else {
+                        console.log("we are currently on page: " + attr.page + " of " + attr.totalPages + "")
+                        LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
+
+                        awsDb.writeToDynamo(LastFMData.userRecentTracks);
+                    }
+                }
+
+                if (LastFMData.events !== null) {
+                    //LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
+                    //console.log()
+                    //writeToDynamo(LastFMData.userRecentTracks, "put")
+                }
             }
         }
     }
+
 }
 
 /**
@@ -275,9 +309,11 @@ function topTracksCallBack(err, res, body) {
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
                 console.log(topTracksCallBack.name + "has parsed your data succesfully");
 
-
-                if (LastFMData.events !== null)
+                if (LastFMData.events !== null) {
                     LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
+
+                    //writeToDynamo(LastFMData.topTracks, "put");
+                }
             }
         }
     }
@@ -350,8 +386,13 @@ function friendsCallBack(err, res, body) {
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
                 console.log(topArtistsCallBack.name + "has parsed your data succesfully");
 
-                if (LastFMData.events !== null)
+                if (LastFMData.events !== null) {
                     LastFMData.events.emit('friendsGathered', { friends: LastFMData.friends })
+
+                    //push to dynamo 
+                    //writeToDynamo(LastFMData.friends, "put")
+
+                }
             }
         }
     }

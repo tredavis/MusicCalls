@@ -31,3 +31,7 @@ div {
     padding: 3px;
     display: inline;
 }
+
+.loadBtn {
+    margin: 10px
+}

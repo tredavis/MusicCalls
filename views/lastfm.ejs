@@ -26,8 +26,10 @@
             <button class="btn btn-default" onclick="window.location='/lastFm/userrecentracks'"> Recent Tracks </button>
           
             <button class="btn btn-default" onclick="window.location='/lastFm/topartists'"> Top Artist </button>
+
+            <button class="btn btn-default" onclick="window.location='/lastFm/getAllUserTracks'"> Get and Save All User Tracks </button>
           </div>
-          <div class="col-md-6 col-xs-12">
+          <div id="userForm" class="col-md-6 col-xs-12">
             <form method="post" action="/lastFm/username" class="form-inline">
                   <div class="form-group">
                     <label for="friend">Type Friend:</label>
@@ -47,16 +49,16 @@
     </div>
   </body>
 
-  <<!--> jQuery </!-->
+  <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="crossorigin="anonymous"></script>
 
-  <<!--> bootstrap </!-->
+  <!-- bootstrap -->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   
-  <<!--> socket io </!-->
+  <!-- socket io -->
   <script src="http://localhost:8080/socket.io/socket.io.js"></script>
 
-  <<!--> custom js </!-->
+  <!-- custom js -->
   <script type="text/javascript" src="/javascripts/lastFmView.js"></script>
 
 </html>

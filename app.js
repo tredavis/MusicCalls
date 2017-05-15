@@ -9,6 +9,15 @@ var bodyParser = require('body-parser');
 var index = require('./routes/index');
 var users = require('./routes/users');
 var lastfm = require('./routes/lastfm');
+var AWS = require("aws-sdk");
+
+AWS.config.update({
+    region: "us-west-2",
+    endpoint: "http://localhost:5000"
+});
+
+var dynamodb = new AWS.DynamoDB();
+
 
 var app = express();
 
@@ -29,12 +38,15 @@ app.use('/users', users);
 app.use('/lastfm', lastfm);
 app.use('/lastfm/*', lastfm);
 
-fs.readFileAsArray('C:/Users/montredavis/Desktop/MediaPlatformJS/MusicCalls/data/tameimpala1', 'utf8', function(err, data) {
-    if (err) {
-        return console.log(err);
-    }
-    console.log(data);
-});
+// fs.readFile('C:/Users/montredavis/Desktop/MediaPlatformJS/MusicCalls/data/tameimpala1', 'utf8', function(err, data) {
+//     if (err) {
+//         return console.log(err);
+//     }
+//     console.log(data);
+// });
+
+
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
