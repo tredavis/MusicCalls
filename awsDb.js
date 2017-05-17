@@ -15,44 +15,62 @@ AWS.config.update({
 var dataBaseClient = new AWS.DynamoDB.DocumentClient();
 var table = "RecentTracks";
 
-//this is a new params object for inserting recent tracks
-exports.writeToDynamo = function(data, type) {
-    for (var i = 0; i < data.length; i++) {
 
-        var params = {
-            TableName: "RecentTracks",
-            ReturnConsumedCapacity: "TOTAL",
-            Item: {
-                trackId: i,
-                dObject: data[i]
-            }
-        };
+/**
+ * [writeToDynamo description]
+ * Writes or updates the items in the database
+ * @param  {[type]} data [description]
+ * @param  {[type]} type [description]
+ * @return {[type]}      [description]
+ */
+exports.writeTracksToTable = function(data, table) {
 
-        console.log(params.Item)
-            //scan returns all the items of the list
-        dataBaseClient.put(params, function(err, data) {
-            console.log(data);
+    //let's make sure you we have data and a table
+    if (typeof data !== 'undefined' && typeof table !== 'undefined') {
 
-            if (err) {
-                console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-            } else {
-                console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-            }
-        });
 
+        for (var i = 0; i < data.length; i++) {
+
+            var params = {
+                TableName: "RecentTracks",
+                ReturnConsumedCapacity: "TOTAL",
+                Item: {
+                    trackId: i,
+                    dObject: data[i]
+                }
+            };
+
+            console.log(params.Item)
+                //scan returns all the items of the list
+            dataBaseClient.put(params, function(err, data) {
+                console.log(data);
+
+                if (err) {
+                    console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
+                } else {
+                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                }
+            });
+
+        }
     }
 }
 
-exports.showAllItems = function(data) {
-    for (var i = 0; i < data.length; i++) {
+
+/**
+ * [showAllItems description]
+ * Show all the items of a given database
+ * @param  {[type]} data [description]
+ * @param  {[type]} table [description]
+ * @return {[type]}      [description]
+ */
+exports.showAllItems = function(data, table) {
+
+    if (typeof data !== 'undefined' && typeof table !== 'undefined') {
 
         var params = {
-            TableName: "MusicDb",
-            ReturnConsumedCapacity: "TOTAL",
-            Item: {
-                userId: data[i].rank,
-                dObject: data
-            }
+            TableName: table,
+            ReturnConsumedCapacity: "TOTAL"
         };
 
         dataBaseClient.scan(params, function(err, data) {
@@ -64,5 +82,6 @@ exports.showAllItems = function(data) {
                 console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
             }
         });
+
     }
 }

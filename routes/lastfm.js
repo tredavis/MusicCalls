@@ -265,14 +265,15 @@ function recentTracksCallBack(err, res, body) {
                         console.log("we are currently on page: " + attr.page + " of " + attr.totalPages + "")
                         LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
 
-                        awsDb.writeToDynamo(LastFMData.userRecentTracks);
+                        //lets write the tracks to the dynamo database
+                        awsDb.writeTracksToTable(LastFMData.userRecentTracks);
                     }
                 }
 
                 if (LastFMData.events !== null) {
                     //LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
                     //console.log()
-                    //writeToDynamo(LastFMData.userRecentTracks, "put")
+                    //writeToDynamo(LastFMData.userRecentTracks, "put");
                 }
             }
         }
@@ -282,7 +283,7 @@ function recentTracksCallBack(err, res, body) {
 
 /**
  * [topTracksCallBack description]
-
+ Call to get the top tracks from a given user's databse
  * @param  {[type]} err  [description]
  * @param  {[type]} res  [description]
  * @param  {[type]} body [description]
@@ -321,6 +322,7 @@ function topTracksCallBack(err, res, body) {
 
 /**
  * [topArtistsCallBack description]
+ * Call to get a users top artirts in the database
  * @param  {[type]} err  [description]
  * @param  {[type]} res  [description]
  * @param  {[type]} body [description]
@@ -460,6 +462,15 @@ router.get('/userrecentracks', function(req, res, next) {
     });
 });
 
+/**
+ * [description]
+
+ * @param  {[type]} req   [description]
+ * @param  {[type]} res   [description]
+ * @param  {[type]} next) {                                      res.render('lastfm', {        title: 'Last FM',        user: { name: userName } [description]
+ * @param  {[type]} data: LastFMData       });} [description]
+ * @return {[type]}       [description]
+ */
 router.get('/topartists', function(req, res, next) {
     //LastFMData.fetchData(userName);
 
@@ -471,6 +482,14 @@ router.get('/topartists', function(req, res, next) {
 });
 
 
+/**
+ * [description]
+
+ * @param  {[type]} req   [description]
+ * @param  {[type]} res)  {               if (req.body ! [description]
+ * @param  {[type]} data: LastFMData                                    });    }} [description]
+ * @return {[type]}       [description]
+ */
 router.post('/username', function(req, res) {
     if (req.body !== null || typeof req.body !== undefined) {
         userName = req.body.username;
