@@ -345,7 +345,7 @@ function topTracksCallBack(err, res, body) {
                     var nextPage = currentPage + 1;
 
                     //if we aren't at the end of the data pages, we will start another get request recursively using this recent tracks callback.
-                    if (currentPage <= 5) {
+                    if (currentPage <= totalPages) {
 
                         console.log("On page: " + currentPage + "out of : " + totalPages)
 

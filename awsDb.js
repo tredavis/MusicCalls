@@ -40,51 +40,57 @@ exports.listTables = function(callBack) {
  */
 exports.writeToDb = function(table, data, type, callBack) {
 
+    var idCounter = 0;
+
     for (var i = 0; i < data.length; i++) {
 
-        var params = {
-            TableName: table,
-            ReturnConsumedCapacity: "TOTAL",
-            Item: {
-                "trackId": {
-                    "N": i.toString()
-                },
-                "mbid": {
-                    "S": data[i].mbid["S"]
-                },
-                "artistName": {
-                    "S": data[i].artistName["S"]
-                },
-                "artistmbid": {
-                    "S": data[i].artistmbid["S"]
-                },
-                "playCount": {
-                    "S": data[i].playCount["S"]
-                },
-                "duration": {
-                    "S": data[i].duration["S"]
-                },
-                "rank": {
-                    "S": data[i].rank["S"]
+        for (var y = 0; y < data[i].length; y++) {
+            var params = {
+                TableName: table,
+                ReturnConsumedCapacity: "TOTAL",
+                Item: {
+                    "trackId": {
+                        "N": idCounter.toString()
+                    },
+                    "mbid": {
+                        "S": data[i][y].mbid["S"]
+                    },
+                    "artistName": {
+                        "S": data[i][y].artistName["S"]
+                    },
+                    "artistmbid": {
+                        "S": data[i][y].artistmbid["S"]
+                    },
+                    "playCount": {
+                        "S": data[i][y].playCount["S"]
+                    },
+                    "duration": {
+                        "S": data[i][y].duration["S"]
+                    },
+                    "rank": {
+                        "S": data[i][y].rank["S"]
+                    }
                 }
+            };
+
+
+            if (dataBaseClient !== null && typeof dataBaseClient !== 'undefined') {
+                //scan returns all the items of the list
+                dataBaseClient.putItem(params, function(err, data) {
+                    if (err) {
+                        console.error("unable to read item. error json:", JSON.stringify(err, null, 2));
+                    } else {
+                        //let's sending back to the callback function
+                        callBack(data);
+                    }
+                });
             }
-        };
 
-        //console.log(data[i])
-
-        if (dataBaseClient !== null && typeof dataBaseClient !== 'undefined') {
-            //scan returns all the items of the list
-            dataBaseClient.putItem(params, function(err, data) {
-                if (err) {
-                    console.error("unable to read item. error json:", JSON.stringify(err, null, 2));
-                } else {
-                    //let's sending back to the callback function
-                    callback(data);
-                }
-            });
+            idCounter++;
         }
 
     }
+
 }
 
 exports.showAllItems = function(table, callBack) {
