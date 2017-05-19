@@ -330,22 +330,54 @@ function topTracksCallBack(err, res, body) {
         //lets parse the data from the raw response
         let jsonParsedData = JSON.parse(body);
         if (typeof jsonParsedData.toptracks !== 'undefined') {
+            var attr = jsonParsedData.toptracks['@attr'];
 
             //now let's parse the data again, we need to have the data massaged for this application
             let massagedData = parseFmCalls(jsonParsedData.toptracks, new TopTrackObject());
-            LastFMData.topTracks = massagedData;
+            LastFMData.topTracks.push(massagedData);
 
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
                 console.log(topTracksCallBack.name + "has parsed your data succesfully");
+                //if so let's make sure we got make the necessary data in order to sort the arrays.
+                if (attr !== undefined && attr !== null) {
+                    var currentPage = parseInt(attr.page);
+                    var totalPages = parseInt(attr.totalPages);
+                    var nextPage = currentPage + 1;
 
-                console.log(LastFMData.events);
+                    //if we aren't at the end of the data pages, we will start another get request recursively using this recent tracks callback.
+                    if (currentPage <= 5) {
 
-                if (LastFMData.events !== null) {
-                    LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
+                        console.log("On page: " + currentPage + "out of : " + totalPages)
 
+
+                        console.log('=========================');
+                        console.log('This is the next page: ' + nextPage);
+                        console.log('=========================');
+
+
+                        getRequest(LastFmApi.userTopTracks(attr.user, LastFmApi.TimePeriods.AllTime, nextPage), topTracksCallBack);
+
+                    } else {
+
+                        //again we are logging for testing purposes
+                        console.log("we are currently on page: " + attr.page + " of " + attr.totalPages + "");
+
+                        ////since we are using the amazon db write this to the db
+                        awsDb.writeToDb("TopTracks", LastFMData.topTracks, "put", function(data) {
+
+                            console.log("the data went to amazon succesfully");
+                            console.log(data);
+
+                        });
+
+                        //since we are done let's emit the results to the client
+                        if (LastFMData.events !== null) {
+                            LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
+                        }
+
+                    }
                 }
 
-                awsDb.writeToDb("TopTracks", LastFMData.topTracks, "put");
 
             }
         }
