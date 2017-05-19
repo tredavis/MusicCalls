@@ -26,6 +26,11 @@ $(function() {
 
     var socket = io.connect('http://localhost:8080');
 
+    /**
+     * [description]
+     * @param  {[type]} data) {                   if (ClientData.imagesPresent [description]
+     * @return {[type]}       [description]
+     */
     socket.on('friendsGathered', function(data) {
 
         if (ClientData.imagesPresent === false) {
@@ -39,6 +44,42 @@ $(function() {
         ClientData.checkStaus();
     });
 
+    /**
+     * [description]
+     * @param  {[type]} data) {                   for (var i [description]
+     * @return {[type]}       [description]
+     */
+    socket.on('dbTables', function(data) {
+        for (var i = 0; i < data.tables.length; i++) {
+            var dropDown = $("#dbSelector");
+            //lets be safe and clear this out before adding more values in
+            dropDown.empty();
+
+            //let's walk the data we got back and add the drop down choices with events so we can live udate.
+            for (var x = 0; x < data.tables[i].TableNames.length; x++) {
+                console.log(data.tables[i].TableNames[x])
+                var option = $("<option>", { id: "option" + x, "value": data.tables[i].TableNames[x] }).html(data.tables[i].TableNames[x]);
+                $("#dbSelector").append(option);
+
+                $("#dbSelector").on("change", function(data) {
+                    console.log(data);
+                });
+            }
+        }
+
+        //close the connection
+        //socket.close();
+    });
+
+    socket.on('allItems', function(data) {
+        console.log(data);
+    });
+
+    /**
+     * [description]
+     * @param  {[type]} data) {                   ClientData.topArtistPresent [description]
+     * @return {[type]}       [description]
+     */
     socket.on('topartistsGathered', function(data) {
         ClientData.topArtistPresent = true;
         console.log(data);
@@ -46,32 +87,71 @@ $(function() {
         //do we need to close the socket??
         ClientData.checkStaus();
     });
+
+    /**
+     * [description]
+
+     * @param  {[type]} data) {                   ClientData.recentTracksPresent [description]
+     * @return {[type]}       [description]
+     */
     socket.on('userRecentTracksGathered', function(data) {
         ClientData.recentTracksPresent = true;
-        console.log(data);
+
+        //let's collect and sort this data
+        var sortedArr = [];
+        sortedArr = data.userRecentTracks.Items;
+        sortedArr.sort(function(a, b) {
+            return a.trackId - b.trackId;
+        });
+        var displayObject = {
+            tableId: 0,
+            dto: null
+        }
+
+        //if (arr !== null && arr.length < 0) {
+        //we need to loop through the list twice to write all the d
+        for (var i = 0; i < sortedArr.length; i++) {
+            var trackId = sortedArr[i].trackId;
+            var dObj = sortedArr[i].dObject;
+
+            //console.log("trackId : " + parseInt(trackId) + "  dObject: " + dObj);
+            console.log("length " + dObj.length);
+
+            if (typeof dObj !== 'undefined') {
+
+                for (var x = 0; x < dObj.length; x++) {
+
+                    var displayObject = {
+                        id: sortedArr[i].trackId,
+                        dto: sortedArr[i].dObject[x]
+                    }
+
+                    console.log(displayObject.dto);
+                }
+            }
+        }
 
         //do we need to close the socket??
         ClientData.checkStaus();
     });
+
+    /**
+     * [description]
+     * Top Tracks event listener from the server
+     * @param  {[type]} data) {                   ClientData.topTracksPresent [description]
+     * @return {[type]}       [description]
+     */
     socket.on('topTracksGathered', function(data) {
         ClientData.topTracksPresent = true;
         console.log(data);
-
         //do we need to close the socket??
         ClientData.checkStaus();
     });
-
-    function loadData(data) {
-
-        for (var list in data) {
-            console.log(data[list]);
-        }
-    }
 
 
     /**
      * [insertFriendImage description]
-
+     * Takes in the friend object and outputs it to the screen.
      * @param  {[type]} friend [description]
      * @return {[type]}        [description]
      */
@@ -103,9 +183,10 @@ $(function() {
     }
 
 
-    $("#userForm").on("click", ".loadBtn", function(data) {
-        console.log(data + " was clicked");
-    });
+    // $("#userForm").on("click", ".loadBtn", function(data) {
+    //     console.log(data + " was clicked");
+    // });
 
-    console.log($("#userForm"))
+    // console.log($("#userForm"))
+
 });
