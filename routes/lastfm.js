@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 let express = require('express');
 let router = express.Router();
@@ -16,6 +16,14 @@ server.listen(8080);
 let userName = '';
 
 /**
+ * [enviorment description]
+ * If this is dynamo, the app will read from the dynamo web app.
+ * If this is local/web, the app will make calls to the last fm api.
+ * @type {String}
+ */
+let enviorment = 'dynamo';
+
+/**
  * [LastFMData description]
 
  * @type {Object}
@@ -28,11 +36,19 @@ var LastFMData = {
     topTracks: [],
     friends: [],
     fetchData: function(user) {
+        //awsDb.showAllItems(LastFmApi.ActiveTable, dynamoCallBack);
+
+        //searches for data here. We will either call to dynamo db for the data or call to last fm's api.
+        //
+        //if ()
         //get the users friends
         //getRequest(LastFmApi.getFriends(user), friendsCallBack);
-        getRequest(LastFmApi.userRecentTracks(user, 1), recentTracksCallBack);
+
+        //this get's the user recent tracks
+
+        //getRequest(LastFmApi.userRecentTracks(user, 1), recentTracksCallBack);
         //getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
-        //getRequest(LastFmApi.userTopTracks(user), topTracksCallBack);
+        getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.OneWeek, 1), topTracksCallBack);
     }
 }
 
@@ -73,8 +89,8 @@ function LastFmTrackObject(rawTrack) {
  * @param {[type]} rawTrack [description]
  */
 function TopTrackObject(rawTrack) {
-    this.contructor = 'TopTrackObject';
-    this.userId = 'N/A';
+    this.contructor = { "S": 'TopTrackObject' };
+    this.userId = { "S": 'N/A' };
     this.name = 'N/A';
     this.mbid = 'N/A';
     this.artistName = 'N/A';
@@ -84,19 +100,19 @@ function TopTrackObject(rawTrack) {
     this.rank = 'N/A';
 
     if (typeof rawTrack !== 'undefined') {
-        this.name = rawTrack.name;
-        this.mbid = rawTrack.mbid;
-        this.artistName = rawTrack.artist.name;
-        this.artistmbid = rawTrack.artist.mbid;
-        this.playCount = rawTrack.playcount;
-        this.duration = rawTrack.duration;
-        this.rank = rawTrack['@attr'].rank;
+        this.name = { "S": rawTrack.name };
+        this.mbid = { "S": rawTrack.mbid };
+        this.artistName = { "S": rawTrack.artist.name };
+        this.artistmbid = { "S": rawTrack.artist.mbid };
+        this.playCount = { "S": rawTrack.playcount };
+        this.duration = { "S": rawTrack.duration };
+        this.rank = { "S": rawTrack['@attr'].rank };
 
         if (rawTrack.mbid === '')
-            this.mbid = "No mbid available"
+            this.mbid = { "S": "No mbid available" };
 
         if (rawTrack.artist.mbid === '')
-            this.artistmbid = "No mbid available"
+            this.artistmbid = { "S": "No mbid available" };
     }
 }
 
@@ -175,7 +191,7 @@ function LastFriendObject(rawFriend) {
  * @return {[type]}           [description]
  */
 function parseFmCalls(data, outObject) {
-    console.log("inside of " + parseFmCalls.name + "this is the type for the outObject: " + outObject.contructor)
+    console.log("inside of " + parseFmCalls.name + "this is the type for the outObject: " + outObject.contructor["S"])
 
     //what happens when we get a track object
     if (outObject.contructor === 'LastFmTrackObject') {
@@ -208,13 +224,14 @@ function parseFmCalls(data, outObject) {
         }
 
         return friendContainer;
-    } else if (outObject.contructor === 'TopTrackObject') {
+    } else if (outObject.contructor["S"] === 'TopTrackObject') {
         let topTrackContainer = [];
 
-        if (typeof data.track !== 'undefined')
-        //let's flatten the artist data struture
+        if (typeof data.track !== 'undefined') {
+            //let's flatten the artist data struture
             for (var i = 0; i < data.track.length; i++) {
-            topTrackContainer.push(new TopTrackObject(data.track[i]));
+                topTrackContainer.push(new TopTrackObject(data.track[i]));
+            }
         }
 
         return topTrackContainer;
@@ -247,32 +264,44 @@ function recentTracksCallBack(err, res, body) {
         if (typeof jsonParsedData.recenttracks !== 'undefined') {
             var attr = jsonParsedData.recenttracks['@attr'];
 
+            //let's parse the data out and push it to the LastFmData.userRecentTracks array.
             let massagedData = parseFmCalls(jsonParsedData.recenttracks, new LastFmTrackObject());
             LastFMData.userRecentTracks.push(massagedData);
 
+            //did we get our massaged data back?
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
                 console.log(recentTracksCallBack.name + " has parsed your data succesfully");
 
+                //if so let's make sure we got make the necessary data in order to sort the arrays.
                 if (attr !== undefined && attr !== null) {
 
+                    //if we aren't at the end of the data pages, we will start another get request recursively using this recent tracks callback.
                     if (parseInt(attr.page) < parseInt(attr.totalPages)) {
 
-                        console.log("we are currently on page:" + parseInt(attr.page))
+                        //logging really for sanity here
+                        //this is logically unecessary.
+                        console.log("we are currently on page:" + parseInt(attr.page));
 
+                        //the recursive call to the Last Fm api
                         getRequest(LastFmApi.userRecentTracks(attr.user, parseInt(attr.page) + 1), recentTracksCallBack);
 
                     } else {
-                        console.log("we are currently on page: " + attr.page + " of " + attr.totalPages + "")
-                        LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
 
+                        //again we are logging for testing purposes
+                        console.log("we are currently on page: " + attr.page + " of " + attr.totalPages + "");
+
+                        //since we are done let's emit the results to the client
+                        LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks });
+
+                        //since we are using the amazon db write this to the db
                         awsDb.writeToDynamo(LastFMData.userRecentTracks);
                     }
                 }
 
                 if (LastFMData.events !== null) {
-                    //LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
-                    //console.log()
-                    //writeToDynamo(LastFMData.userRecentTracks, "put")
+
+                    LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
+                    writeToDynamo(LastFmApi.ActiveTable, LastFMData.userRecentTracks, "put")
                 }
             }
         }
@@ -309,11 +338,15 @@ function topTracksCallBack(err, res, body) {
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
                 console.log(topTracksCallBack.name + "has parsed your data succesfully");
 
+                console.log(LastFMData.events);
+
                 if (LastFMData.events !== null) {
                     LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
 
-                    //writeToDynamo(LastFMData.topTracks, "put");
                 }
+
+                awsDb.writeToDb("TopTracks", LastFMData.topTracks, "put");
+
             }
         }
     }
@@ -412,7 +445,6 @@ function getRequest(path, callback) {
 
 io.on('connection', function(socket) {
     //set the connection to a global socket
-
     if (socket !== null || typeof socket !== 'undefined') {
         LastFMData.events = socket;
     }
@@ -432,9 +464,9 @@ io.on('close', function(socket) {
  * @return {[type]}       [description]
  */
 router.get('/', function(req, res, next) {
-    //LastFMData.fetchData();
+    LastFMData.fetchData("montredavis");
     res.render('lastfm', {
-        title: 'Welcome to your Music Database!',
+        title: 'Music Database!',
         user: { name: userName },
         data: LastFMData
     });
@@ -452,6 +484,18 @@ router.get('/', function(req, res, next) {
  */
 router.get('/userrecentracks', function(req, res, next) {
     //LastFMData.fetchData(userName);
+    awsDb.listTables(function(tables) {
+
+        LastFMData.events.emit('dbTables', { tables: awsDb.Tables });
+
+        for (var i = 0; i < tables[0].TableNames.length; i++) {
+
+            awsDb.showAllItems(tables[0].TableNames[i], function(data) {
+
+                LastFMData.events.emit('allItems', { items: data });
+            });
+        };
+    });
 
     res.render('lastfm', {
         title: 'Last FM',
@@ -473,16 +517,31 @@ router.get('/topartists', function(req, res, next) {
 
 router.post('/username', function(req, res) {
     if (req.body !== null || typeof req.body !== undefined) {
-        userName = req.body.username;
+        if (enviorment === 'dynamo') {
 
-        LastFMData.fetchData(userName);
+            userName = "montredavis";
+            awsDb.showAllItems(LastFmApi.ActiveTable, dynamoCallBack);
+
+        } else {
+
+            userName = req.body.username;
+            LastFMData.fetchData(userName);
+
+        }
 
         res.render('lastfm', {
             title: 'Last FM',
             user: { name: userName },
-            data: LastFMData
+            data: LastFMData,
+
         });
     }
 });
+
+
+function dynamoCallBack(data, foundData) {
+    LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: data });
+}
+
 
 module.exports = router;
