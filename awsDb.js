@@ -46,7 +46,7 @@ exports.writeToDb = function(table, data, type, callBack) {
             TableName: table,
             ReturnConsumedCapacity: "TOTAL",
             Item: {
-                trackId: { "N": i },
+                "trackId": { "N": i.toString() },
                 "name": data[i].name
             }
         };
@@ -55,8 +55,6 @@ exports.writeToDb = function(table, data, type, callBack) {
 
         //scan returns all the items of the list
         dataBaseClient.putItem(params, function(err, data) {
-            console.log(data);
-
             if (err) {
                 console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
             } else {

@@ -7,27 +7,48 @@
 var app = require('../app');
 var debug = require('debug')('musiccalls:server');
 var http = require('http');
+var port = null;
 
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
+  var portfinder = require('portfinder');
 
-/**
- * Create HTTP server.
- */
+  portfinder.getPortPromise()
+    .then((retPort) => {
+        //
+        // `port` is guaranteed to be a free port
+        // in this scope.
+        //
+        port = retPort;
+        app.set('port', port);
 
-var server = http.createServer(app);
+        console.log(port);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+        /**
+        * Create HTTP server.
+        */
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+        var server = http.createServer(app);
+        server.listen(port);
+        server.on('error', onError);
+        server.on('listening', onListening);
+        
+    })
+    .catch((err) => {
+        //
+        // Could not get a free port, `err` contains the reason.
+        //
+        console.log(err);
+    });
+
+
+
+
+
+
+
 
 /**
  * Normalize a port into a number, string, or false.

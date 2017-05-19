@@ -10,7 +10,7 @@ var awsDb = require('../awsDb.js');
 let server = require('http').createServer(router);
 let io = require('socket.io').listen(server);
 
-server.listen(8080);
+server.listen(8000);
 
 //global keys
 let userName = '';
@@ -25,7 +25,7 @@ let enviorment = 'dynamo';
 
 /**
  * [LastFMData description]
-
+s
  * @type {Object}
  */
 var LastFMData = {
@@ -48,7 +48,7 @@ var LastFMData = {
 
         //getRequest(LastFmApi.userRecentTracks(user, 1), recentTracksCallBack);
         //getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
-        getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.OneWeek, 1), topTracksCallBack);
+        getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.AllTime, 1), topTracksCallBack);
     }
 }
 
@@ -114,6 +114,8 @@ function TopTrackObject(rawTrack) {
         if (rawTrack.artist.mbid === '')
             this.artistmbid = { "S": "No mbid available" };
     }
+
+    return this;
 }
 
 /**
@@ -294,14 +296,14 @@ function recentTracksCallBack(err, res, body) {
                         LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks });
 
                         //since we are using the amazon db write this to the db
-                        awsDb.writeToDynamo(LastFMData.userRecentTracks);
+                        awsDb.writeToDynamo(LastFmApi.ActiveTable, LastFMData.userRecentTracks, "put");
                     }
                 }
 
                 if (LastFMData.events !== null) {
 
                     LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: LastFMData.userRecentTracks })
-                    writeToDynamo(LastFmApi.ActiveTable, LastFMData.userRecentTracks, "put")
+                    awsDb.writeToDynamo(LastFmApi.ActiveTable, LastFMData.userRecentTracks, "put");
                 }
             }
         }
@@ -338,14 +340,41 @@ function topTracksCallBack(err, res, body) {
             if (typeof massagedData !== 'undefined' && massagedData !== null) {
                 console.log(topTracksCallBack.name + "has parsed your data succesfully");
 
-                console.log(LastFMData.events);
+                //if so let's make sure we got make the necessary data in order to sort the arrays.
+                if (attr !== undefined && attr !== null) {
+
+                    //if we aren't at the end of the data pages, we will start another get request recursively using this recent tracks callback.
+                    if (parseInt(attr.page) < parseInt(attr.totalPages)) {
+
+                        //logging really for sanity here
+                        //this is logically unecessary.
+                        console.log("we are currently on page:" + parseInt(attr.page));
+
+                        //the recursive call to the Last Fm api
+                        getRequest(LastFmApi.userTopTracks(attr.user, LastFmApi.TimePeriods.AllTime, parseInt(attr.page) + 1), topTracksCallBack);
+
+                    } else {
+
+                        //again we are logging for testing purposes
+                        console.log("we are currently on page: " + attr.page + " of " + attr.totalPages + "");
+
+                        //since we are done let's emit the results to the client
+                        LastFMData.events.emit('topTracksGathered', { userRecentTracks: LastFMData.topTracks });
+
+                        //since we are using the amazon db write this to the db
+                        awsDb.writeToDynamo(LastFMData.topTracks);
+                    }
+                }
 
                 if (LastFMData.events !== null) {
                     LastFMData.events.emit('topTracksGathered', { topTracks: LastFMData.topTracks })
 
                 }
 
-                awsDb.writeToDb("TopTracks", LastFMData.topTracks, "put");
+                awsDb.writeToDb("TopTracks", LastFMData.topTracks, "put", function(data) {
+                    console.log(data);
+                    console.log('This data was succesfully written to amazon')
+                });
 
             }
         }
