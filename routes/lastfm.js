@@ -48,7 +48,7 @@ var LastFMData = {
 
         //getRequest(LastFmApi.userRecentTracks(user, 1), recentTracksCallBack);
         //getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
-        getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.OneWeek, 1), topTracksCallBack);
+        getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.OneYear, 1), topTracksCallBack);
     }
 }
 
@@ -496,7 +496,9 @@ io.on('close', function(socket) {
  * @return {[type]}       [description]
  */
 router.get('/', function(req, res, next) {
-    LastFMData.fetchData("montredavis");
+    //LastFMData.fetchData("montredavis");
+    //
+    awsDb.showAllItems("TopTracks", dynamoCallBack);
     res.render('lastfm', {
         title: 'Music Database!',
         user: { name: userName },
@@ -572,7 +574,7 @@ router.post('/username', function(req, res) {
 
 
 function dynamoCallBack(data, foundData) {
-    LastFMData.events.emit('userRecentTracksGathered', { userRecentTracks: data });
+    LastFMData.events.emit('tracks', { tracks: data });
 }
 
 

@@ -141,9 +141,22 @@ $(function() {
      * @param  {[type]} data) {                   ClientData.topTracksPresent [description]
      * @return {[type]}       [description]
      */
-    socket.on('topTracksGathered', function(data) {
+    socket.on('tracks', function(data) {
         ClientData.topTracksPresent = true;
-        console.log(data);
+
+        var items = data.tracks[0].Items;
+
+        var sortedArr = [];
+        sortedArr = items;
+        sortedArr.sort(function(a, b) {
+            return a.rank['S'] - b.rank['S'];
+        });
+
+        for (var i = 0; i < 5; i++) {
+
+            console.log(sortedArr[i])
+        }
+
         //do we need to close the socket??
         ClientData.checkStaus();
     });

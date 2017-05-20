@@ -55,6 +55,9 @@ exports.writeToDb = function(table, data, type, callBack) {
                     "mbid": {
                         "S": data[i][y].mbid["S"]
                     },
+                    "name": {
+                        "S": data[i][y].name["S"]
+                    },
                     "artistName": {
                         "S": data[i][y].artistName["S"]
                     },
