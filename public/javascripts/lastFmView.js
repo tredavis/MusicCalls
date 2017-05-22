@@ -152,7 +152,7 @@ $(function() {
             return a.rank['S'] - b.rank['S'];
         });
 
-        for (var i = 0; i < 5; i++) {
+        for (var i = 0; i < sortedArr.length; i++) {
 
             console.log(sortedArr[i])
         }
