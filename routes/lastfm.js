@@ -18,10 +18,11 @@ let userName = '';
 /**
  * [enviorment description]
  * If this is dynamo, the app will read from the dynamo web app.
- * If this is local/web, the app will make calls to the last fm api.
+ * If this is lastfm, the app will make calls to the last fm api.
  * @type {String}
  */
-let enviorment = 'dynamo';
+//let enviorment = 'dynamo';
+let enviorment = 'lastfm';
 
 /**
  * [LastFMData description]
@@ -48,7 +49,8 @@ var LastFMData = {
 
         //getRequest(LastFmApi.userRecentTracks(user, 1), recentTracksCallBack);
         //getRequest(LastFmApi.userTopArtist(user), topArtistsCallBack);
-        getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.OneYear, 1), topTracksCallBack);
+        //getRequest(LastFmApi.userTopTracks(user, LastFmApi.TimePeriods.OneYear, 1), topTracksCallBack);
+        getRequest(LastFmApi.userTopTags(user), topTagsCallBack);
     }
 }
 
@@ -114,6 +116,14 @@ function TopTrackObject(rawTrack) {
         if (rawTrack.artist.mbid === '')
             this.artistmbid = { "S": "No mbid available" };
     }
+}
+
+/**
+ * [LastFmArtistObject description]
+ * @param {[type]} rawArtist [description]
+ */
+function TopTagObject(rawTag) {
+
 }
 
 /**
@@ -235,6 +245,17 @@ function parseFmCalls(data, outObject) {
         }
 
         return topTrackContainer;
+    } else if (outObject.contructor["S"] === 'TopTagObject') {
+        let topTagContainer = [];
+
+        if (typeof data.tag !== 'undefined') {
+            //let's flatten the artist data struture
+            for (var i = 0; i < data.tag.length; i++) {
+                topTagContainer.push(new TopTagObject(data.tag[i]));
+            }
+        }
+
+        return topTagContainer;
     } else {
         console.log("something went wrong");
     }
@@ -463,6 +484,47 @@ function friendsCallBack(err, res, body) {
     }
 }
 
+
+/**
+ * [topTagsCallBack description]
+ * @param  {[type]} err  [description]
+ * @param  {[type]} res  [description]
+ * @param  {[type]} body [description]
+ * @return {[type]}      [description]
+ */
+function topTagsCallBack(err, res, body) {
+
+    console.log('inside ' + topTagsCallBack.name + ' callback');
+    if (typeof body === 'undefined' || body === null) {
+        console.log(err);
+        console.log(res.statusCode);
+    } else {
+
+        //lets parse the data from the raw response
+        let jsonParsedData = JSON.parse(body);
+        console.log(jsonParsedData);
+        //now let's parse the data again, we need to have the data massaged for this application
+        // if (typeof jsonParsedData.friends !== 'undefined') {
+
+        //     let massagedData = parseFmCalls(jsonParsedData.friends, new LastFriendObject());
+
+        //     LastFMData.friends = massagedData;
+
+        //     if (typeof massagedData !== 'undefined' && massagedData !== null) {
+        //         console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+
+        //         if (LastFMData.events !== null) {
+        //             LastFMData.events.emit('friendsGathered', { friends: LastFMData.friends })
+
+        //             //push to dynamo 
+        //             //writeToDynamo(LastFMData.friends, "put")
+
+        //         }
+        //     }
+        // }
+    }
+}
+
 /**
  * [getRequest description]
 
@@ -496,9 +558,17 @@ io.on('close', function(socket) {
  * @return {[type]}       [description]
  */
 router.get('/', function(req, res, next) {
-    //LastFMData.fetchData("montredavis");
-    //
-    awsDb.showAllItems("TopTracks", dynamoCallBack);
+
+    //let's check the enviorment to see if we need to read from mongo, dynamo or call out to last fm
+    if (typeof enviorment !== 'undefined' && enviorment !== null) {
+
+        if (enviorment === 'dynamo') {
+            awsDb.showAllItems("TopTracks", dynamoCallBack);
+        } else if (enviorment === "lastfm") {
+            LastFMData.fetchData("montredavis");
+        }
+    }
+
     res.render('lastfm', {
         title: 'Music Database!',
         user: { name: userName },
@@ -518,18 +588,17 @@ router.get('/', function(req, res, next) {
  */
 router.get('/userrecentracks', function(req, res, next) {
     //LastFMData.fetchData(userName);
-    awsDb.listTables(function(tables) {
+    //awsDb.listTables(function(tables) {
 
-        LastFMData.events.emit('dbTables', { tables: awsDb.Tables });
+    LastFMData.events.emit('dbTables', { tables: awsDb.Tables });
 
-        for (var i = 0; i < tables[0].TableNames.length; i++) {
+    for (var i = 0; i < tables[0].TableNames.length; i++) {
 
-            awsDb.showAllItems(tables[0].TableNames[i], function(data) {
+        awsDb.showAllItems(tables[0].TableNames[i], function(data) {
 
-                LastFMData.events.emit('allItems', { items: data });
-            });
-        };
-    });
+            LastFMData.events.emit('allItems', { items: data });
+        });
+    };
 
     res.render('lastfm', {
         title: 'Last FM',
