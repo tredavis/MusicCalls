@@ -46,6 +46,25 @@ $(function() {
 
     /**
      * [description]
+     * @param  {[type]} data) {                   if (ClientData.imagesPresent [description]
+     * @return {[type]}       [description]
+     */
+    socket.on('tagsGathered', function(data) {
+
+        console.log(data);
+        //if (ClientData.tags === false) {
+        // for (var i = 0; i < data.tags.length; i++) {
+        //     insertFriendImage(data.friends[i]);
+        //     console.log(data.friends[i]);
+        // }
+        //}
+
+        //do we need to close the socket??
+        ClientData.checkStaus();
+    });
+
+    /**
+     * [description]
      * @param  {[type]} data) {                   for (var i [description]
      * @return {[type]}       [description]
      */

@@ -58,7 +58,7 @@ var LastFMData = {
  * [LastFmObject description]
  */
 function LastFmTrackObject(rawTrack) {
-    this.contructor = 'LastFmTrackObject';
+    this.contructor = { "S": 'LastFmTrackObject' };
     this.name = '';
     this.dateText = '';
     this.dataUTC = '';
@@ -119,11 +119,18 @@ function TopTrackObject(rawTrack) {
 }
 
 /**
- * [LastFmArtistObject description]
- * @param {[type]} rawArtist [description]
+ * [TopTagObject description]
+
+ * @param {[type]} rawTag [description]
  */
 function TopTagObject(rawTag) {
+    this.contructor = { "S": 'TopTagObject' };
 
+    if (typeof rawTag !== "undefined") {
+        this.name = { "S": rawTag.name };
+        this.count = { "S": rawTag.count };
+        this.url = { "S": rawTag.url };
+    }
 }
 
 /**
@@ -131,7 +138,7 @@ function TopTagObject(rawTag) {
  * @param {[type]} rawArtist [description]
  */
 function LastFmArtistObject(rawArtist) {
-    this.contructor = 'LastFmArtistObject';
+    this.contructor = { "S": 'LastFmArtistObject' };
     this.artistName = '';
     this.artistId = '';
     this.rank = 0;
@@ -150,7 +157,7 @@ function LastFmArtistObject(rawArtist) {
  * @param {[type]} rawArtist [description]
  */
 function LastFriendObject(rawFriend) {
-    this.contructor = 'LastFriendObject';
+    this.contructor = { "S": 'LastFriendObject' };
     this.data = null;
     this.name = '';
     this.age = '';
@@ -201,7 +208,7 @@ function LastFriendObject(rawFriend) {
  * @return {[type]}           [description]
  */
 function parseFmCalls(data, outObject) {
-    console.log("inside of " + parseFmCalls.name + "this is the type for the outObject: " + outObject.contructor["S"])
+    console.log("inside of " + parseFmCalls.name + "this is the type for the outObject: " + outObject.contructor)
 
     //what happens when we get a track object
     if (outObject.contructor === 'LastFmTrackObject') {
@@ -213,7 +220,9 @@ function parseFmCalls(data, outObject) {
             }
 
         return trackContainer;
-    } else if (outObject.contructor === 'LastFmArtistObject') {
+    }
+    //logic to handle the LastFmArtistObject
+    else if (outObject.contructor === 'LastFmArtistObject') {
 
         let artistsContainer = [];
 
@@ -224,7 +233,9 @@ function parseFmCalls(data, outObject) {
         }
 
         return artistsContainer;
-    } else if (outObject.contructor === 'LastFriendObject') {
+    }
+    //Logic to handle the LastFriendObject
+    else if (outObject.contructor === 'LastFriendObject') {
         let friendContainer = [];
 
         if (typeof data.user !== 'undefined')
@@ -234,7 +245,9 @@ function parseFmCalls(data, outObject) {
         }
 
         return friendContainer;
-    } else if (outObject.contructor["S"] === 'TopTrackObject') {
+    }
+    //Logic to handle the TopTrackObject
+    else if (outObject.contructor["S"] === 'TopTrackObject') {
         let topTrackContainer = [];
 
         if (typeof data.track !== 'undefined') {
@@ -245,7 +258,9 @@ function parseFmCalls(data, outObject) {
         }
 
         return topTrackContainer;
-    } else if (outObject.contructor["S"] === 'TopTagObject') {
+    }
+    //Logic to handle the TopTagObject
+    else if (outObject.contructor["S"] === 'TopTagObject') {
         let topTagContainer = [];
 
         if (typeof data.tag !== 'undefined') {
@@ -254,9 +269,10 @@ function parseFmCalls(data, outObject) {
                 topTagContainer.push(new TopTagObject(data.tag[i]));
             }
         }
-
         return topTagContainer;
-    } else {
+    }
+    //Fallback
+    else {
         console.log("something went wrong");
     }
 }
@@ -504,24 +520,26 @@ function topTagsCallBack(err, res, body) {
         let jsonParsedData = JSON.parse(body);
         console.log(jsonParsedData);
         //now let's parse the data again, we need to have the data massaged for this application
-        // if (typeof jsonParsedData.friends !== 'undefined') {
+        if (typeof jsonParsedData.toptags !== 'undefined') {
 
-        //     let massagedData = parseFmCalls(jsonParsedData.friends, new LastFriendObject());
+            let massagedData = parseFmCalls(jsonParsedData.toptags, new TopTagObject());
 
-        //     LastFMData.friends = massagedData;
+            LastFMData.topTags = massagedData;
 
-        //     if (typeof massagedData !== 'undefined' && massagedData !== null) {
-        //         console.log(topArtistsCallBack.name + "has parsed your data succesfully");
+            if (typeof massagedData !== 'undefined' && massagedData !== null) {
+                console.log(topTagsCallBack.name + "has parsed your data succesfully");
 
-        //         if (LastFMData.events !== null) {
-        //             LastFMData.events.emit('friendsGathered', { friends: LastFMData.friends })
+                if (LastFMData.events !== null) {
+                    LastFMData.events.emit('tagsGathered', { tags: LastFMData.topTags })
 
-        //             //push to dynamo 
-        //             //writeToDynamo(LastFMData.friends, "put")
+                    //push to dynamo 
+                    //writeToDynamo(LastFMData.friends, "put")
 
-        //         }
-        //     }
-        // }
+                } else {
+                    console.log('something is wrong with socket io');
+                }
+            }
+        }
     }
 }
 
