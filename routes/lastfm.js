@@ -532,8 +532,12 @@ function topTagsCallBack(err, res, body) {
                 if (LastFMData.events !== null) {
                     LastFMData.events.emit('tagsGathered', { tags: LastFMData.topTags })
 
-                    //push to dynamo 
-                    //writeToDynamo(LastFMData.friends, "put")
+                    awsDb.writeToDb("TopTags", LastFMData.topTags, "put", function(data) {
+
+                        console.log("the data went to amazon succesfully");
+                        console.log(data);
+
+                    });
 
                 } else {
                     console.log('something is wrong with socket io');
