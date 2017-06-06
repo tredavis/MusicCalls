@@ -39,7 +39,7 @@ exports.listTables = function(callBack) {
  * @return {[type]}          [description]
  */
 exports.writeToDb = function(table, data, type, callBack) {
-
+    //we need to create a dto object and write the data to the aws database
     var idCounter = 0;
 
     for (var i = 0; i < data.length; i++) {
@@ -105,18 +105,16 @@ Contains logic to determine which AWS DTO to create.
 function AWSDto(object, table) {
     if (table === "TopTracks") {
         return new TopTrackDto(object)
-    }
-    if (table === "TopTags") {
+    } else if (table === "TopTags") {
         return new TopTagDto(object)
-    }
-    if (table === "TopArtist") {
+    } else if (table === "TopArtist") {
         return new LastFmArtistDto(object)
-    }
-    if (table === "Friends") {
+    } else if (table === "Friends") {
         return new LastFriendDto(object)
-    }
-    if (table === "RecentTracks") {
+    } else if (table === "RecentTracks") {
         return new LastFmTrackDto(object)
+    } else {
+        console.log("Unable to create a dto object")
     }
 }
 
