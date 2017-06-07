@@ -15,6 +15,8 @@ router.get('/login', function(req, res, next) {
 router.post('/login', function(req, res, next) {
     console.log("here");
 
-    console.log(res);
+    console.log(req);
 });
+
+
 module.exports = router;
