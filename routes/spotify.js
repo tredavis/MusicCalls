@@ -21,13 +21,20 @@ let stateKey = 'spotify_auth_state';
 //the spotify url
 let authString = 'https://accounts.spotify.com/authorize' + '?response_type=code' + '&state=' + stateKey + '&client_id=' + keys.clientId + (scopes ? '&scope=' + encodeURIComponent(scopes) : '') + '&redirect_uri=' + encodeURIComponent(redirect_uri);
 
+//socket io stuff
+let server = require('http').createServer(router);
+let io = require('socket.io').listen(server);
 
-// credentials are optional
-// var spotifyApi = new SpotifyWebApi({
-//     clientId: keys.clientId,
-//     clientSecret: keys.clientSecret,
-//     redirectUri: 'http://localhost:3000/spotify/login'
-// });
+server.listen(8080);
+
+//making spotify api calls.
+let initSpotifyCalls = function(access_token) {
+    getRequest('https://api.spotify.com/v1/me/tracks?access_token=' + access_token, function(err, response) {
+        console.log('inside saved tracks');
+
+        console.log(JSON.parse(response.body));
+    })
+};
 
 function getRequest(path, callback) {
     request.get(path, callback);
@@ -35,15 +42,34 @@ function getRequest(path, callback) {
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-    //startAuth(res);
+    res.render('spotify', { title: 'Welcome Back to Spotify' });
 });
 
+/* GET users listing. */
+router.get('/spotifyLoggedIn', function(req, res, next) {
+    console.log("the user is logged in");
+});
+
+/**
+ * [description]
+ * @param  {[type]} req   [description]
+ * @param  {[type]} res   [description]
+ * @param  {[type]} next) {                   res.redirect(authString);} [description]
+ * @return {[type]}       [description]
+ */
 router.get('/login', function(req, res, next) {
 
     //starts the spotify authenication
     res.redirect(authString);
 });
 
+/**
+ * [description]
+ * @param  {[type]} req      [description]
+ * @param  {[type]} res)     {                       var              code   [description]
+ * @param  {[type]} headers: {                       'Authorization': 'Basic '             + (new Buffer(keys.clientId + ':' + keys.clientSecret).toString('base64') [description]
+ * @return {[type]}          [description]
+ */
 router.get('/callback', function(req, res) {
 
     // your application requests refresh and access tokens
@@ -66,6 +92,14 @@ router.get('/callback', function(req, res) {
         json: true
     };
 
+    /**
+     * [description]
+     * @param  {[type]} error    [description]
+     * @param  {[type]} response [description]
+     * @param  {[type]} body)    {                   if (!error && response.statusCode [description]
+     * @param  {[type]} json:    true                                                   };                      initSpotifyCalls(body.access_token);                        request.get(options, function(error, response, body) {                console.log(body);            });                        res.redirect('/spotify/#' +                querystring.stringify({                    access_token: access_token,                    refresh_token: refresh_token                }) [description]
+     * @return {[type]}          [description]
+     */
     request.post(authOptions, function(error, response, body) {
         if (!error && response.statusCode === 200) {
 
@@ -78,19 +112,21 @@ router.get('/callback', function(req, res) {
                 json: true
             };
 
+            initSpotifyCalls(body.access_token);
+
             // use the access token to access the Spotify Web API
             request.get(options, function(error, response, body) {
                 console.log(body);
             });
 
             // we can also pass the token to the browser to make requests from there
-            res.redirect('/#' +
+            res.redirect('/spotify/#' +
                 querystring.stringify({
                     access_token: access_token,
                     refresh_token: refresh_token
                 }));
         } else {
-            res.redirect('/#' +
+            res.redirect('/spotify/#' +
                 querystring.stringify({
                     error: 'invalid_token'
                 }));
@@ -99,6 +135,14 @@ router.get('/callback', function(req, res) {
 
 });
 
+/**
+ * [description]
+ * @param  {[type]} req   [description]
+ * @param  {[type]} res)  {                      var                       refresh_token   [description]
+ * @param  {[type]} form: {                                                                                    grant_type: 'refresh_token',                                                       refresh_token: refresh_token        } [description]
+ * @param  {[type]} json: true             };    request.post(authOptions, function(error, response,     body) {                                 if (!error && response.statusCode [description]
+ * @return {[type]}       [description]
+ */
 router.get('/refresh_token', function(req, res) {
 
     // requesting access token from refresh token
