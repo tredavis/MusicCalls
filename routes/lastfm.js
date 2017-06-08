@@ -10,7 +10,7 @@ var awsDb = require('../awsDb.js');
 let server = require('http').createServer(router);
 let io = require('socket.io').listen(server);
 
-server.listen(8080);
+//server.listen(8080);
 
 //global keys
 let userName = '';
