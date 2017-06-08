@@ -5,15 +5,15 @@ var request = require('request');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 
+//let's grab all the spotify calls
+let SpotifyCalls = require('../spotifyApi.js');
+
 //let's grab the spotify access keys
 let keys = require('../keys.js').SpotifyKeys;
 
 //the scopes that are availabe from spotify.
 let scopes = "playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private streaming user-follow-modify user-follow-read user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-top-read";
 let redirect_uri = "http://localhost:3000/spotify/callback";
-
-//the spotify object
-var SpotifyWebApi = require('spotify-web-api-node');
 
 //spotify auth key
 let stateKey = 'spotify_auth_state';
@@ -29,11 +29,41 @@ server.listen(8080);
 
 //making spotify api calls.
 let initSpotifyCalls = function(access_token) {
-    getRequest('https://api.spotify.com/v1/me/tracks?access_token=' + access_token, function(err, response) {
-        console.log('inside saved tracks');
+    console.log("Inside the spotify init call");
 
-        console.log(JSON.parse(response.body));
-    })
+    // SpotifyCalls.Calls.getMe(access_token, function(response) {
+    //     console.log(response);
+    // });
+    // 
+    // SpotifyCalls.Calls.usersCurrentSong(access_token, function(response) {
+    //     console.log(response);
+    // });
+
+
+    var tracks = [];
+    SpotifyCalls.Calls.getUserSavedTracks(access_token, function(response) {
+        var tracksReturned = response.body.items;
+
+        //the offset or the amount of data we are getting with each call
+        var offset = response.body.limit;
+
+        //the url link to the next subset of data
+        var nextUrl = response.body.next + '?access_token=' + access_token;
+
+        //the total number of tracks which we will not stop until we collect them all.
+        var total = response.body.total;
+
+        tracks.push(tracksReturned);
+
+        //if the offset is less than the total we need to make the call again.
+        if (offset < total) {
+
+            SpotifyCalls.Calls.getUserSavedTracks(access_token, function(response) {
+
+                }
+            }
+        }
+    });
 };
 
 function getRequest(path, callback) {
