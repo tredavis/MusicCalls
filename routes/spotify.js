@@ -12,7 +12,7 @@ let SpotifyCalls = require('../spotifyApi.js');
 let keys = require('../keys.js').SpotifyKeys;
 
 //the scopes that are availabe from spotify.
-let scopes = "playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private streaming user-follow-modify user-follow-read user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-top-read";
+let scopes = "playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private streaming user-follow-modify user-follow-read user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-top-read user-read-recently-played";
 let redirect_uri = "http://localhost:3000/spotify/callback";
 
 //spotify auth key
@@ -42,10 +42,19 @@ let initSpotifyCalls = function(access_token) {
 
 
     var tracks = [];
-    SpotifyCalls.Calls.getUserSavedTracks('', access_token, function(response) {
+    // SpotifyCalls.Calls.getUserSavedTracks('', access_token, function(response) {
+
+    //     if (eventSender !== null)
+    //         eventSender.emit('savedTracks', { data: response });
+    // });
+
+    SpotifyCalls.Calls.usersRecentlyPlayed('', access_token, function(response) {
 
         if (eventSender !== null)
-            eventSender.emit('savedTracks', { data: response });
+            eventSender.emit('recentTracks', { data: response });
+
+        else
+            console.log("the call didn't work");
     });
 };
 

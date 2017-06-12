@@ -5,4 +5,8 @@ $(function() {
     socket.on('savedTracks', function(data) {
         console.log(data);
     });
+
+    socket.on('recentTracks', function(data) {
+        console.log(data);
+    });
 });

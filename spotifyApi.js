@@ -3,6 +3,7 @@ var request = require('request');
 
 exports.SpotifyCache = {
     usrSavedTracks: [],
+    recentTracks: [],
     loadBalancer: 5
 };
 
@@ -48,8 +49,6 @@ exports.Calls = {
 
                 //let's push the returned data to our cached array
                 exports.SpotifyCache.usrSavedTracks.push(JSON.parse(response.body).items);
-
-                //console.log(exports.SpotifyCache.usrSavedTracks);
 
                 //if we the loadbalance value is 0 let's reset it and send the data to the view.
                 if (exports.SpotifyCache.loadBalancer === 0) {
@@ -118,17 +117,47 @@ exports.Calls = {
 
         });
     },
-    usersRecentlyPlayed: function(access_token, callback) {
-        getRequest('https://api.spotify.com/v1/me/player/recently-played?access_token=' + access_token, function(err, response) {
+    usersRecentlyPlayed: function(url, access_token, callback) {
+        var defaultPath = 'https://api.spotify.com/v1/me/player/recently-played?access_token=';
+
+        //if we caller didn't pass in a url. 
+        //use the default, if not we change it to the passed in url
+        if (url !== '') {
+            defaultPath = url;
+        }
+
+        getRequest(defaultPath + access_token + '&limit=50', function(err, response) {
 
             //was there an error
             if (typeof err !== 'undefined' && err !== null) {
-                console.log("There was an error in the getFollowedArtists call: " + err)
+                console.log("There was an error in the usersRecentlyPlayed call: " + err)
             }
 
             // if not let's send the data back
             if (typeof response !== 'undefined' && response !== null) {
-                callback(JSON.parse(response.body));
+                exports.SpotifyCache.loadBalancer--;
+
+                //let's push the returned data to our cached array
+                exports.SpotifyCache.recentTracks.push(JSON.parse(response.body).items);
+
+                //if we the loadbalance value is 0 let's reset it and send the data to the view.
+                if (exports.SpotifyCache.loadBalancer === 0) {
+                    exports.SpotifyCache.loadBalancer = 5;
+                    callback(exports.SpotifyCache.recentTracks);
+                }
+
+                //the url to the next set of data. 
+                //thank goodness spotify gives us this.
+                var nextUrl = JSON.parse(response.body).next;
+
+                if (nextUrl !== null && typeof nextUrl !== "undefined") {
+                    //this is a recursive call
+                    exports.Calls.usersRecentlyPlayed(nextUrl + '&access_token=', access_token, callback);
+
+                } else {
+                    //send the data through the callback url.
+                    callback(exports.SpotifyCache.recentTracks);
+                }
             }
 
         });
