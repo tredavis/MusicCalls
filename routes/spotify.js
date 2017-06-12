@@ -12,7 +12,7 @@ let SpotifyCalls = require('../spotifyApi.js');
 let keys = require('../keys.js').SpotifyKeys;
 
 //the scopes that are availabe from spotify.
-let scopes = "playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private streaming user-follow-modify user-follow-read user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-top-read";
+let scopes = "playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private streaming user-follow-modify user-follow-read user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-top-read user-read-recently-played";
 let redirect_uri = "http://localhost:3000/spotify/callback";
 
 //spotify auth key
@@ -24,8 +24,9 @@ let authString = 'https://accounts.spotify.com/authorize' + '?response_type=code
 //socket io stuff
 let server = require('http').createServer(router);
 let io = require('socket.io').listen(server);
+let eventSender = null;
 
-server.listen(8080);
+server.listen(8000);
 
 //making spotify api calls.
 let initSpotifyCalls = function(access_token) {
@@ -41,28 +42,19 @@ let initSpotifyCalls = function(access_token) {
 
 
     var tracks = [];
-    SpotifyCalls.Calls.getUserSavedTracks(access_token, function(response) {
-        var tracksReturned = response.body.items;
+    // SpotifyCalls.Calls.getUserSavedTracks('', access_token, function(response) {
 
-        //the offset or the amount of data we are getting with each call
-        var offset = response.body.limit;
+    //     if (eventSender !== null)
+    //         eventSender.emit('savedTracks', { data: response });
+    // });
 
-        //the url link to the next subset of data
-        var nextUrl = response.body.next + '?access_token=' + access_token;
+    SpotifyCalls.Calls.usersRecentlyPlayed('', access_token, function(response) {
 
-        //the total number of tracks which we will not stop until we collect them all.
-        var total = response.body.total;
+        if (eventSender !== null)
+            eventSender.emit('recentTracks', { data: response });
 
-        tracks.push(tracksReturned);
-
-        //if the offset is less than the total we need to make the call again.
-        if (offset < total) {
-
-            SpotifyCalls.Calls.getUserSavedTracks(access_token, function(response) {
-
-                }
-            }
-        }
+        else
+            console.log("the call didn't work");
     });
 };
 
@@ -195,6 +187,13 @@ router.get('/refresh_token', function(req, res) {
             });
         }
     });
+});
+
+io.on('connection', function(socket) {
+    //set the connection to a global socket
+    if (socket !== null || typeof socket !== 'undefined') {
+        eventSender = socket;
+    }
 });
 
 module.exports = router;
