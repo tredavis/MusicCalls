@@ -42,11 +42,11 @@ let initSpotifyCalls = function(access_token) {
 
 
     var tracks = [];
-    // SpotifyCalls.Calls.getUserSavedTracks('', access_token, function(response) {
+    SpotifyCalls.Calls.getUserSavedTracks('', access_token, function(response) {
 
-    //     if (eventSender !== null)
-    //         eventSender.emit('savedTracks', { data: response });
-    // });
+        if (eventSender !== null)
+            eventSender.emit('savedTracks', { data: response });
+    });
 
     SpotifyCalls.Calls.usersRecentlyPlayed('', access_token, function(response) {
 
@@ -134,6 +134,7 @@ router.get('/callback', function(req, res) {
                 json: true
             };
 
+            //start the spotify calls.
             initSpotifyCalls(body.access_token);
 
             // use the access token to access the Spotify Web API
