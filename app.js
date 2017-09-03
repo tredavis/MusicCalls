@@ -9,7 +9,6 @@ var bodyParser = require('body-parser');
 var index = require('./routes/index');
 var users = require('./routes/users');
 var lastfm = require('./routes/lastfm');
-var spotify = require('./routes/spotify');
 var AWS = require("aws-sdk");
 
 AWS.config.update({
@@ -34,16 +33,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-//loads the paths for the router
 app.use('/', index);
 app.use('/users', users);
-
 app.use('/lastfm', lastfm);
 app.use('/lastfm/*', lastfm);
-
-//spotify routes
-app.use('/spotify', spotify);
-app.use('/spotify/*', spotify);
 
 // fs.readFile('C:/Users/montredavis/Desktop/MediaPlatformJS/MusicCalls/data/tameimpala1', 'utf8', function(err, data) {
 //     if (err) {
