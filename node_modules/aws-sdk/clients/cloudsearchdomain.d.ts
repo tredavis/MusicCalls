@@ -4,7 +4,6 @@ import {AWSError} from '../lib/error';
 import {Service} from '../lib/service';
 import {ServiceConfigurationOptions} from '../lib/service';
 import {ConfigBase as Config} from '../lib/config';
-import {Readable} from 'stream';
 interface Blob {}
 declare class CloudSearchDomain extends Service {
   /**
@@ -39,7 +38,7 @@ declare class CloudSearchDomain extends Service {
 }
 declare namespace CloudSearchDomain {
   export type Adds = number;
-  export type _Blob = Buffer|Uint8Array|Blob|string|Readable;
+  export type _Blob = Buffer|Uint8Array|Blob|string;
   export interface Bucket {
     /**
      * The facet value being counted.
