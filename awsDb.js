@@ -39,41 +39,20 @@ exports.listTables = function(callBack) {
  * @return {[type]}          [description]
  */
 exports.writeToDb = function(table, data, type, callBack) {
-
+    //we need to create a dto object and write the data to the aws database
     var idCounter = 0;
 
     for (var i = 0; i < data.length; i++) {
 
         for (var y = 0; y < data[i].length; y++) {
+
+            //we're gonna pass in the object and the table so we can know how to shape the data
+            var dto = new AWSDto(data[i][y], table);
+
             var params = {
                 TableName: table,
                 ReturnConsumedCapacity: "TOTAL",
-                Item: {
-                    "trackId": {
-                        "N": idCounter.toString()
-                    },
-                    "mbid": {
-                        "S": data[i][y].mbid["S"]
-                    },
-                    "name": {
-                        "S": data[i][y].name["S"]
-                    },
-                    "artistName": {
-                        "S": data[i][y].artistName["S"]
-                    },
-                    "artistmbid": {
-                        "S": data[i][y].artistmbid["S"]
-                    },
-                    "playCount": {
-                        "S": data[i][y].playCount["S"]
-                    },
-                    "duration": {
-                        "S": data[i][y].duration["S"]
-                    },
-                    "rank": {
-                        "S": data[i][y].rank["S"]
-                    }
-                }
+                Item: dto
             };
 
 
@@ -114,3 +93,98 @@ exports.showAllItems = function(table, callBack) {
         }
     });
 }
+
+
+
+/**
+ * [AWSDto description]
+Contains logic to determine which AWS DTO to create.
+ * @param {[type]} object [description]
+ * @param {[type]} table  [description]
+ */
+function AWSDto(object, table) {
+    if (table === "TopTracks") {
+        return new TopTrackDto(object)
+    } else if (table === "TopTags") {
+        return new TopTagDto(object)
+    } else if (table === "TopArtist") {
+        return new LastFmArtistDto(object)
+    } else if (table === "Friends") {
+        return new LastFriendDto(object)
+    } else if (table === "RecentTracks") {
+        return new LastFmTrackDto(object)
+    } else {
+        console.log("Unable to create a dto object")
+    }
+}
+
+
+/**
+ * [TopTrackDto description]
+Creates and returns a TopTrack Data Transfer Object
+ * @param {[type]} track [description]
+ */
+function TopTrackDto(track) {
+    return {
+        "trackId": {
+            "N": idCounter.toString()
+        },
+        "mbid": {
+            "S": track.mbid["S"]
+        },
+        "name": {
+            "S": track.name["S"]
+        },
+        "artistName": {
+            "S": track.artistName["S"]
+        },
+        "artistmbid": {
+            "S": track.artistmbid["S"]
+        },
+        "playCount": {
+            "S": track.playCount["S"]
+        },
+        "duration": {
+            "S": track.duration["S"]
+        },
+        "rank": {
+            "S": track.rank["S"]
+        }
+    }
+}
+
+
+/**
+ * [TopTagDto description]
+ * @param {[type]} object [description]
+ */
+function TopTagDto(object) {
+    return {};
+};
+
+
+/**
+ * [LastFmArtistDto description]
+ * @param {[type]} object [description]
+ */
+function LastFmArtistDto(object) {
+    return {};
+};
+
+
+/**
+ * [LastFriendDto description]
+ * @param {[type]} object [description]
+ */
+function LastFriendDto(object) {
+    return {};
+};
+
+
+/**
+ * [LastFmTrackDto description]
+ * @param {[type]} object [description]
+ */
+function LastFmTrackDto(object) {
+    return {};
+};
